@@ -23,6 +23,11 @@ export default defineConfig({
         changeOrigin: true,
         cookieDomainRewrite: "",
       },
+      "/broadcasting": {
+        target: "http://127.0.0.1:8000",
+        changeOrigin: true,
+        cookieDomainRewrite: "",
+      },
     },
   },
   build: {

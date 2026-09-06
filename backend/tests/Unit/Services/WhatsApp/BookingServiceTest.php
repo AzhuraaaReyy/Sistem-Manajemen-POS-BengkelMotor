@@ -31,6 +31,12 @@ class BookingServiceTest extends TestCase
         );
     }
 
+    protected function tearDown(): void
+    {
+        \Carbon\Carbon::setTestNow();
+        parent::tearDown();
+    }
+
     public function test_create_booking_rejects_sunday(): void
     {
         $chat = WhatsAppChat::factory()->create();
@@ -48,8 +54,36 @@ class BookingServiceTest extends TestCase
         ]);
     }
 
+    public function test_create_booking_rejects_past_dates(): void
+    {
+        $chat = WhatsAppChat::factory()->create();
+
+        // Pilih tanggal lalu yang bukan Minggu agar teruji cek tanggal lewat,
+        // bukan cek libur.
+        $past = today()->subDays(1);
+        if ($past->isSunday()) {
+            $past = today()->subDays(2);
+        }
+
+        $this->expectException(ValidationException::class);
+        $this->expectExceptionMessage('H-1');
+
+        $this->service->createBooking($chat, [
+            'customer_name' => 'John Doe',
+            'booking_date' => $past->toDateString(),
+            'booking_time' => '10:00',
+            'tnkb' => 'B1234XYZ',
+            'motorcycle_type' => 'Honda Vario 160',
+            'complaint' => 'Ganti oli',
+        ]);
+    }
+
     public function test_create_booking_rejects_same_day(): void
     {
+        // Pin ke hari kerja (bukan Minggu) agar cek "libur Minggu" tidak
+        // mendahului cek "minimal H-1" — tes deterministik setiap hari.
+        \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse('2026-09-07 10:00:00')); // Senin
+
         $chat = WhatsAppChat::factory()->create();
         
         $this->expectException(ValidationException::class);
@@ -104,6 +138,30 @@ class BookingServiceTest extends TestCase
             'motorcycle_type' => 'Honda Vario 160',
             'complaint' => 'Ganti oli',
         ]);
+    }
+
+    public function test_slot_full_when_max_daily_bookings_reached(): void
+    {
+        $date = today()->addDays(2);
+
+        WhatsAppBooking::factory()->count(5)->create([
+            'booking_date' => $date,
+            'status' => 'APPROVED',
+        ]);
+
+        $this->assertFalse($this->service->isSlotAvailable($date));
+    }
+
+    public function test_slot_available_when_below_max_daily_bookings(): void
+    {
+        $date = today()->addDays(2);
+
+        WhatsAppBooking::factory()->count(3)->create([
+            'booking_date' => $date,
+            'status' => 'APPROVED',
+        ]);
+
+        $this->assertTrue($this->service->isSlotAvailable($date));
     }
 
     public function test_create_booking_succeeds_with_valid_data(): void

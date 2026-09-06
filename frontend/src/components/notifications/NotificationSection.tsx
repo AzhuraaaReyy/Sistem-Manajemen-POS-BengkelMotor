@@ -7,6 +7,7 @@ interface Props {
   notifications: Notification[];
   onMarkAsRead: (id: number) => void;
   onViewAll?: () => void;
+  onNavigate?: (n: Notification) => void;
   isTabSemua?: boolean;
   emptyMessage?: string;
   type?: "STOCK" | "TRANSACTION" | "SYSTEM";
@@ -17,6 +18,7 @@ export function NotificationSection({
   notifications,
   onMarkAsRead,
   onViewAll,
+  onNavigate,
   isTabSemua = false,
   emptyMessage = "Tidak ada notifikasi",
   type = "STOCK",
@@ -119,6 +121,7 @@ export function NotificationSection({
                   key={notification.id}
                   notification={notification}
                   onMarkAsRead={onMarkAsRead}
+                  onClick={onNavigate}
                 />
               ))}
 

@@ -82,6 +82,6 @@ return [
     |
     */
 
-    'simulation_mode' => (bool) env('WHATSAPP_SIMULATION_MODE', false),
+    'simulation_mode' => filter_var(env('WHATSAPP_SIMULATION_MODE', false), FILTER_VALIDATE_BOOLEAN),
 
 ];

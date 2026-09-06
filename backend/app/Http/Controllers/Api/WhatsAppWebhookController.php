@@ -35,7 +35,7 @@ class WhatsAppWebhookController extends Controller
         $signature = $request->header('X-Hub-Signature-256', '');
 
         if (!config('whatsapp.simulation_mode')) {
-            if (!$this->whatsapp->verifySignature(json_encode($payload), $signature)) {
+            if (!$this->whatsapp->verifySignature($request->getContent(), $signature)) {
                 Log::warning('WhatsApp webhook: invalid signature', [
                     'ip' => $request->ip(),
                 ]);
@@ -58,3 +58,5 @@ class WhatsAppWebhookController extends Controller
         return response()->json(['message' => 'ok'], 200);
     }
 }
+
+

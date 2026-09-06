@@ -1,5 +1,6 @@
 import Echo from 'laravel-echo';
 import Pusher from 'pusher-js';
+import { buildEchoAuthHeaders } from './websocketConfig';
 
 declare global {
   interface Window {
@@ -19,10 +20,9 @@ export const echo = new Echo<'reverb'>({
   forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
   enabledTransports: ['ws', 'wss'],
   disableStats: true,
+  withCredentials: true,
   auth: {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem('auth_token') || ''}`,
-    },
+    headers: buildEchoAuthHeaders(true),
   },
 });
 

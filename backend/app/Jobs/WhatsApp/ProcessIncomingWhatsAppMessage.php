@@ -35,6 +35,12 @@ class ProcessIncomingWhatsAppMessage implements ShouldQueue
 
         $wasNewChat = $chat->wasRecentlyCreated;
 
+        if ($this->metaMessageId && WhatsAppMessage::where('meta_message_id', $this->metaMessageId)->exists()) {
+            // Webhook Meta bisa mengirim ulang payload yang sama (retry).
+            // Lewati agar pesan tidak diproses duplikat.
+            return;
+        }
+
         $chat->update([
             'last_message_at' => now(),
             'last_message_from' => 'customer',

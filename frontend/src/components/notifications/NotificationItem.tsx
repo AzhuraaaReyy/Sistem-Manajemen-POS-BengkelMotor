@@ -3,9 +3,10 @@ import type { Notification } from "@/types";
 interface Props {
   notification: Notification;
   onMarkAsRead: (id: number) => void;
+  onClick?: (n: Notification) => void;
 }
 
-export function NotificationItem({ notification, onMarkAsRead }: Props) {
+export function NotificationItem({ notification, onMarkAsRead, onClick }: Props) {
   const isUnread = !notification.read_at;
   const timeAgo = getTimeAgo(notification.created_at);
 
@@ -27,7 +28,10 @@ export function NotificationItem({ notification, onMarkAsRead }: Props) {
   return (
     <button
       type="button"
-      onClick={() => isUnread && onMarkAsRead(notification.id)}
+      onClick={() => {
+        if (isUnread) onMarkAsRead(notification.id);
+        onClick?.(notification);
+      }}
       className={`flex w-full items-center gap-3 p-3 text-left transition-colors ${
         isUnread
           ? "bg-blue-50/30 hover:bg-blue-50/60"

@@ -16,6 +16,11 @@ class WhatsAppBookingController extends Controller
         private BookingService $bookingService,
     ) {}
 
+    public function show(WhatsAppBooking $booking): JsonResponse
+    {
+        return response()->json(['data' => $booking]);
+    }
+
     public function approve(WhatsAppBooking $booking): JsonResponse
     {
         /** @var User $admin */

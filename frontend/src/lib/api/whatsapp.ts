@@ -1,6 +1,6 @@
 import client from './client';
 import type { Paginated } from '@/types';
-import type { WhatsAppChat } from '@/features/whatsapp/types';
+import type { WhatsAppChat, WhatsAppBooking } from '@/features/whatsapp/types';
 
 export const getWhatsAppChatsApi = async (params?: { status?: string }) => {
   const { data } = await client.get<Paginated<WhatsAppChat>>('/whatsapp/chats', { params });
@@ -25,6 +25,13 @@ export const releaseChatApi = async (chatId: number) => {
 export const sendWhatsAppMessageApi = async (chatId: number, message: string) => {
   const { data } = await client.post(`/whatsapp/chats/${chatId}/send`, { message });
   return data;
+};
+
+export const getWhatsAppBookingApi = async (bookingId: number) => {
+  const { data } = await client.get<{ data: WhatsAppBooking }>(
+    `/whatsapp/bookings/${bookingId}`,
+  );
+  return data.data;
 };
 
 export const approveBookingApi = async (bookingId: number) => {

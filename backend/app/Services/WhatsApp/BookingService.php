@@ -34,6 +34,12 @@ class BookingService
             ]);
         }
 
+        if ($date->lt(today())) {
+            throw ValidationException::withMessages([
+                'booking_date' => 'Booking minimal H-1. Silakan pilih tanggal besok atau setelahnya.',
+            ]);
+        }
+
         if ($date->isSameDay(today())) {
             throw ValidationException::withMessages([
                 'booking_date' => 'Booking minimal H-1. Silakan pilih tanggal besok atau setelahnya.',
@@ -88,11 +94,16 @@ class BookingService
 
     public function isSlotAvailable(Carbon $date): bool
     {
-        $existingCount = WhatsAppBooking::whereDate('booking_date', $date)
-            ->whereIn('status', ['PENDING', 'APPROVED'])
-            ->count();
+        return DB::transaction(function () use ($date) {
+            // Kunci baris yang ada pada tanggal tersebut agar dua permintaan
+            // booking bersamaan tidak sama-sama lolos check kapasitas harian.
+            $existingCount = WhatsAppBooking::whereDate('booking_date', $date)
+                ->whereIn('status', ['PENDING', 'APPROVED'])
+                ->lockForUpdate()
+                ->count();
 
-        return $existingCount < config('whatsapp.operational.max_daily_bookings', 5);
+            return $existingCount < config('whatsapp.operational.max_daily_bookings', 5);
+        });
     }
 
     public function approve(WhatsAppBooking $booking, User $admin): void

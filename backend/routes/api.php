@@ -131,6 +131,7 @@ Route::prefix('v1')->group(function () {
         Route::post('whatsapp/chats/{chat}/send', [App\Http\Controllers\Api\WhatsAppChatController::class, 'sendMessage'])->middleware('role:ADMIN');
 
         // Booking Approval (Admin only)
+        Route::get('whatsapp/bookings/{booking}', [App\Http\Controllers\Api\WhatsAppBookingController::class, 'show'])->middleware('role:ADMIN');
         Route::post('whatsapp/bookings/{booking}/approve', [App\Http\Controllers\Api\WhatsAppBookingController::class, 'approve'])->middleware('role:ADMIN');
         Route::post('whatsapp/bookings/{booking}/reject', [App\Http\Controllers\Api\WhatsAppBookingController::class, 'reject'])->middleware('role:ADMIN');
 

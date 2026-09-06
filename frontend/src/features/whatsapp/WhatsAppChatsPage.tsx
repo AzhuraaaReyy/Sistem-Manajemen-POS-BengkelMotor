@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Select } from '@/components/ui/Select';
 import { RefreshCwIcon } from '@/components/shared/icons';
-import { getWhatsAppChatsApi, getWhatsAppChatDetailApi } from '@/lib/api/whatsapp';
+import { getWhatsAppChatsApi, getWhatsAppChatDetailApi, getWhatsAppBookingApi } from '@/lib/api/whatsapp';
 import { useToast } from '@/components/ui/Toast';
 import { echo } from '@/lib/websocket';
 import type { WhatsAppChat, WhatsAppBooking } from './types';
@@ -71,6 +71,20 @@ export function WhatsAppChatsPage() {
     };
   }, [selectedChat?.id]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const bookingId = Number(params.get('booking'));
+    if (!bookingId || Number.isNaN(bookingId)) return;
+
+    getWhatsAppBookingApi(bookingId)
+      .then((booking) => {
+        if (booking.status === 'PENDING') {
+          setSelectedBooking(booking);
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
   const handleSelectChat = (chatId: number) => {
     fetchChatDetail(chatId);
   };
@@ -130,7 +144,10 @@ export function WhatsAppChatsPage() {
       <BookingApprovalModal
         booking={selectedBooking}
         open={!!selectedBooking}
-        onClose={() => setSelectedBooking(null)}
+        onClose={() => {
+          setSelectedBooking(null);
+          window.history.replaceState({}, '', window.location.pathname);
+        }}
         onUpdate={handleRefresh}
       />
     </div>

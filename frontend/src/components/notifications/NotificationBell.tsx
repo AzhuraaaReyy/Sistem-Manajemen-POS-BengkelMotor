@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import { BellIcon, CloseIcon } from "@/components/shared/icons";
 import { useNotifications } from "@/lib/useNotifications";
+import type { Notification } from "@/types";
 import { NotificationSection } from "./NotificationSection";
 
 export function NotificationBell() {
@@ -32,6 +33,18 @@ export function NotificationBell() {
 
   const handleMarkAllAsRead = async () => {
     await markAllAsRead();
+  };
+
+  const handleNavigate = (n: Notification) => {
+    const actionUrl = (n.data as { action_url?: string } | undefined)?.action_url;
+    const fallback =
+      n.type === "STOCK"
+        ? "/produk"
+        : n.type === "TRANSACTION"
+          ? "/riwayat"
+          : "/whatsapp-chats";
+    setOpen(false);
+    navigate(actionUrl || fallback);
   };
 
   useEffect(() => {
@@ -174,6 +187,7 @@ export function NotificationBell() {
                             : stockNotifications
                         }
                         onMarkAsRead={markAsRead}
+                        onNavigate={handleNavigate}
                         onViewAll={() => setActiveTab("peringatan")}
                         isTabSemua={activeTab === "semua"}
                         emptyMessage="Stok aman"
@@ -190,6 +204,7 @@ export function NotificationBell() {
                             : transactionNotifications
                         }
                         onMarkAsRead={markAsRead}
+                        onNavigate={handleNavigate}
                         onViewAll={() => setActiveTab("transaksi")}
                         isTabSemua={activeTab === "semua"}
                         emptyMessage="Belum ada transaksi terbaru"

@@ -19,12 +19,14 @@ class WhatsAppChat extends Model
         'last_message_from',
         'bot_active',
         'admin_takeover',
+        'booking_draft',
     ];
 
     protected $casts = [
         'last_message_at' => 'datetime',
         'bot_active' => 'boolean',
         'admin_takeover' => 'boolean',
+        'booking_draft' => 'array',
     ];
 
     public function messages(): HasMany

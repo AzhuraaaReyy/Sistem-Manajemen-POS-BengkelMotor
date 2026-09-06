@@ -83,4 +83,26 @@ class BookingTest extends TestCase
 
         $response->assertStatus(403);
     }
+
+    public function test_admin_can_fetch_a_single_booking(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $booking = WhatsAppBooking::factory()->create(['status' => 'PENDING']);
+
+        $response = $this->actingAs($admin)->getJson("/api/v1/whatsapp/bookings/{$booking->id}");
+
+        $response->assertOk();
+        $response->assertJsonPath('data.id', $booking->id);
+        $response->assertJsonPath('data.status', 'PENDING');
+    }
+
+    public function test_cashier_cannot_fetch_a_booking(): void
+    {
+        $cashier = User::factory()->cashier()->create();
+        $booking = WhatsAppBooking::factory()->create();
+
+        $response = $this->actingAs($cashier)->getJson("/api/v1/whatsapp/bookings/{$booking->id}");
+
+        $response->assertStatus(403);
+    }
 }

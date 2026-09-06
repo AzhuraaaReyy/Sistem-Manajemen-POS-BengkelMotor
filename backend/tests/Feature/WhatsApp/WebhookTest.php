@@ -52,6 +52,46 @@ class WebhookTest extends TestCase
         $response->assertStatus(400);
     }
 
+    public function test_webhook_verifies_signature_against_raw_request_body(): void
+    {
+        config([
+            'whatsapp.simulation_mode' => false,
+            'whatsapp.meta.app_secret' => 'test_secret',
+        ]);
+        Queue::fake();
+
+        // Raw body dengan whitespace (multi-line) persis seperti yang dikirim
+        // Meta. getContent() mengembalikan string persis ini. Jika signature
+        // dihitung ulang dari json_encode($request->all()) (yang menghapus
+        // whitespace), hash-nya BERBEDA dari string ini -> verifikasi gagal.
+        // Verifikasi terhadap $request->getContent() (raw body) adalah yang
+        // benar dan harus diterima.
+        $rawBody = "{\n" .
+            "  \"entry\": [\n" .
+            "    {\n" .
+            "      \"changes\": [\n" .
+            "        {\n" .
+            "          \"value\": {\n" .
+            "            \"messages\": [\n" .
+            "              {\"from\": \"628123456789\", \"id\": \"wamid.rawbody1\", \"type\": \"text\", \"text\": {\"body\": \"Halo\"}}\n" .
+            "            ]\n" .
+            "          }\n" .
+            "        }\n" .
+            "      ]\n" .
+            "    }\n" .
+            "  ]\n" .
+            "}";
+
+        $signature = 'sha256=' . hash_hmac('sha256', $rawBody, 'test_secret');
+
+        $response = $this->call('POST', '/api/v1/whatsapp/webhook', [], [], [], [
+            'CONTENT_TYPE' => 'application/json',
+            'HTTP_X_HUB_SIGNATURE_256' => $signature,
+        ], $rawBody);
+
+        $response->assertStatus(200);
+    }
+
     public function test_webhook_accepts_payload_in_simulation_mode(): void
     {
         config(['whatsapp.simulation_mode' => true]);

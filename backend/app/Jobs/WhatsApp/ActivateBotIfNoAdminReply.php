@@ -37,6 +37,12 @@ class ActivateBotIfNoAdminReply implements ShouldQueue
             return;
         }
 
+        if ($chat->last_message_at === null) {
+            // Chat tanpa pesan inbound (mis. hanya status), tidak ada dasar
+            // untuk mengukur jeda — lewati.
+            return;
+        }
+
         if ($chat->last_message_at->diffInMinutes(now()) < 5) {
             return;
         }
