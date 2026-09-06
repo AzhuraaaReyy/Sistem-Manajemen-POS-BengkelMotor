@@ -54,6 +54,11 @@ const PAGE_META: Array<{ path: string; title: string; description: string }> = [
     title: "Audit Log",
     description: "Riwayat aktivitas penting sistem",
   },
+  {
+    path: "/whatsapp-chats",
+    title: "Chat WhatsApp",
+    description: "Kelola percakapan & booking pelanggan",
+  },
 ];
 
 export function AppShell() {

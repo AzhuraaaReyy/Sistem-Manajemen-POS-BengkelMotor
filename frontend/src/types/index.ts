@@ -209,15 +209,49 @@ export interface AuditLog {
 // ===== Dashboard =====
 
 export interface DashboardKpi {
-  today_revenue: number;
-  today_transactions: number;
-  today_service_orders: number;
-  today_expenses: number;
+  // New period-based fields (primary - follow selected date range)
+  period_revenue: number;
+  period_transactions: number;
+  period_service_orders: number;
+  period_expenses: number;
+  period_revenue_vs_prev_pct: number;
+  period_transactions_vs_prev_pct: number;
+  period_service_orders_vs_prev_pct: number;
+  period_expenses_vs_prev_pct: number;
+
+  // Estimated result follows the selected period
+  estimated_result: number;
+
+  // Month figures (current calendar month, independent of filter)
   month_revenue: number;
   month_expenses: number;
-  estimated_result: number;
+
+  // Real-time fields (not date-filtered)
   low_stock_count: number;
   void_count_today: number;
+
+  // Backward compatibility aliases (deprecated - kept for existing consumers)
+  today_revenue?: number;
+  today_transactions?: number;
+  today_service_orders?: number;
+  today_expenses?: number;
+  today_revenue_vs_yesterday_pct?: number;
+  today_transactions_vs_yesterday_pct?: number;
+  today_service_orders_vs_yesterday_pct?: number;
+  today_expenses_vs_yesterday_pct?: number;
+  low_stock_count_vs_yesterday_pct?: number;
+  void_count_today_vs_yesterday_pct?: number;
+}
+
+export interface RevenueBreakdown {
+  products: number;
+  services: number;
+  // New field names (primary - vs previous period of same duration)
+  products_vs_prev_pct: number;
+  services_vs_prev_pct: number;
+  // Backward compatibility aliases
+  products_vs_yesterday_pct?: number;
+  services_vs_yesterday_pct?: number;
 }
 
 export interface DashboardChartPoint {
@@ -242,7 +276,7 @@ export interface TopService {
 export interface DashboardData {
   kpi: DashboardKpi;
   revenue_series: DashboardChartPoint[];
-  revenue_breakdown: { products: number; services: number };
+  revenue_breakdown: RevenueBreakdown;
   top_products: TopSeller[];
   top_services: TopService[];
   low_stock: Product[];

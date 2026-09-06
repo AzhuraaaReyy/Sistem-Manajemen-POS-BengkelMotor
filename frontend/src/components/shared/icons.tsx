@@ -197,3 +197,40 @@ export const AlertIcon = (p: IconProps) => (
     <path d="M12 9v4M12 17h.01" />
   </svg>
 );
+
+export const SendIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M22 2 11 13M22 2 15 22l-4-9-9-4 20-7z" />
+  </svg>
+);
+
+export const UserCheckIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="m16 11 2 2 4-4" />
+  </svg>
+);
+
+export const UserXIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+    <circle cx="9" cy="7" r="4" />
+    <path d="m17 13 4 4m0-4-4 4" />
+  </svg>
+);
+
+export const RefreshCwIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
+    <path d="M21 3v5h-5" />
+    <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
+    <path d="M8 16H3v5" />
+  </svg>
+);
+
+export const MessageCircleIcon = (p: IconProps) => (
+  <svg {...base(p)}>
+    <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22z" />
+  </svg>
+);

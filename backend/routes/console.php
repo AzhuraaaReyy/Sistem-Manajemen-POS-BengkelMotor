@@ -14,3 +14,4 @@ Schedule::command('notifications:cleanup')->daily();
 // penjualan/Atur Stok tetap mendapat notifikasi tanpa menunggu
 // perubahan stok berikutnya.
 Schedule::command('notifications:sync-stock')->hourly();
+Schedule::command('whatsapp:cleanup')->daily();

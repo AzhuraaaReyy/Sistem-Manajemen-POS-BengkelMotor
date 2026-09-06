@@ -13,10 +13,14 @@ class DashboardController extends Controller
 
     public function index(Request $request)
     {
-        $from = Carbon::parse($request->get('from', now()->startOfMonth()->toDateString()));
-        // toDateTimeString() (not toDateString()) so the default upper bound
-        // stays at 23:59:59 instead of collapsing to midnight, which would
-        // silently exclude today's own transactions from the default range.
+        $request->validate([
+            'from' => 'nullable|date|before_or_equal:today',
+            'to' => 'nullable|date|after_or_equal:from|before_or_equal:today',
+        ]);
+
+        // Default to today (not start of month) so dashboard shows today's data by default
+        $from = Carbon::parse($request->get('from', now()->startOfDay()->toDateString()));
+        // toDateTimeString() keeps 23:59:59 to include today's transactions
         $to = Carbon::parse($request->get('to', now()->endOfDay()->toDateTimeString()));
 
         return response()->json([

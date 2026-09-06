@@ -7,6 +7,7 @@ import {
   DashboardIcon,
   HistoryIcon,
   LogoutIcon,
+  MessageCircleIcon,
   PosIcon,
   ReportIcon,
   ServiceIcon,
@@ -35,6 +36,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/laporan", label: "Laporan", icon: ReportIcon, roles: ["ADMIN"] },
   { to: "/pengguna", label: "Pengguna", icon: TagIcon, roles: ["ADMIN"] },
   { to: "/audit", label: "Audit Log", icon: ShieldIcon, roles: ["ADMIN"] },
+  { to: "/whatsapp-chats", label: "Chat WhatsApp", icon: MessageCircleIcon, roles: ["ADMIN"] },
 ];
 
 interface SidebarProps {
