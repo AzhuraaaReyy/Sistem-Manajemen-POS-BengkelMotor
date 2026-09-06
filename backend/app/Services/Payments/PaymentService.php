@@ -13,7 +13,9 @@ use App\Services\Inventory\StockLedger;
 use App\Services\Payments\Contracts\PaymentGateway;
 use App\Services\Payments\DTO\GatewayNotification;
 use App\Services\Payments\DTO\PendingChargeRequest;
+use App\Exceptions\PaymentGatewayUnavailableException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use RuntimeException;
 
 class PaymentService
@@ -48,19 +50,24 @@ class PaymentService
             $productItems = $sale->items->where('item_type', SaleItem::TYPE_PRODUCT);
             $this->ledger->decrementForSale($sale, $productItems, $cashier->id, StockMovement::TYPE_SALE);
 
-            $charge = $this->gateway->createCharge(new PendingChargeRequest(
-                orderId: $sale->id,
-                saleCode: $sale->sale_code,
-                method: $method,
-                grossAmount: (string) $sale->grand_total,
-                items: $sale->items->map(fn ($i) => [
-                    'id' => $i->product_id ?? $i->service_id,
-                    'name' => $i->item_name_snapshot,
-                    'price' => (float) $i->unit_price,
-                    'quantity' => $i->quantity,
-                ])->all(),
-                customer: $sale->customer ? ['first_name' => $sale->customer->name] : null,
-            ));
+            try {
+                $charge = $this->gateway->createCharge(new PendingChargeRequest(
+                    orderId: $sale->id,
+                    saleCode: $sale->sale_code,
+                    method: $method,
+                    grossAmount: (string) $sale->grand_total,
+                    items: $sale->items->map(fn ($i) => [
+                        'id' => $i->product_id ?? $i->service_id,
+                        'name' => $i->item_name_snapshot,
+                        'price' => (float) $i->unit_price,
+                        'quantity' => $i->quantity,
+                    ])->all(),
+                    customer: $sale->customer ? ['first_name' => $sale->customer->name] : null,
+                ));
+            } catch (\Throwable $e) {
+                Log::warning('Payment gateway unavailable: ' . $e->getMessage(), ['sale_id' => $sale->id, 'method' => $method]);
+                throw new PaymentGatewayUnavailableException($sale->id);
+            }
 
             PaymentCharge::create([
                 'sale_id' => $sale->id,

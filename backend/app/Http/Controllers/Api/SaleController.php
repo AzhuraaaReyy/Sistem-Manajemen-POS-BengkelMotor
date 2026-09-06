@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\PaymentGatewayUnavailableException;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\SaleResource;
 use App\Models\Sale;
@@ -189,6 +190,13 @@ $request->validate([
 
             $paid->load(['items', 'cashier:id,name', 'customer:id,name', 'latestCharge']);
             return response()->json(['data' => new SaleResource($paid), 'message' => 'Pembayaran berhasil.']);
+        } catch (PaymentGatewayUnavailableException $e) {
+            return response()->json([
+                'message' => $e->getMessage(),
+                'code' => 'PAYMENT_GATEWAY_UNAVAILABLE',
+                'sale_id' => $e->saleId,
+                'errors' => [],
+            ], 503);
         } catch (RuntimeException $e) {
             $status = $e->getCode();
             $status = ($status >= 400 && $status <= 599) ? $status : 422;
