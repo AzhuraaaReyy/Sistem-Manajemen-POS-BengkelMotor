@@ -12,6 +12,7 @@ import {
   createSaleApi,
   getSaleApi,
   voidSaleApi,
+  type CreateSalePayload,
 } from "@/lib/api/sales";
 import { simulatePaymentApi } from "@/lib/api/payments";
 import { useNotifications } from "@/lib/useNotifications";
@@ -91,6 +92,7 @@ export function PosPage() {
   const [showOrderDetail, setShowOrderDetail] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const pollingIntervalRef = useRef<number | null>(null);
+  const retrySaleIdRef = useRef<number | null>(null);
 
   useEffect(() => {
     setVisibleProductLimit(10);
@@ -291,6 +293,7 @@ export function PosPage() {
   }, []);
 
   const handleClosePaymentModal = useCallback(() => {
+    retrySaleIdRef.current = null;
     setCheckoutOpen(false);
     setPendingSale(null);
     setPaymentStatus("PENDING");
@@ -388,7 +391,7 @@ export function PosPage() {
     }
     setCheckoutLoading(true);
     try {
-      const sale = await createSaleApi({
+      const salePayload: CreateSalePayload = {
         customer_id: selectedCustomerId ?? undefined,
         discount_amount: discount,
         items: cart.map((l) =>
@@ -404,7 +407,21 @@ export function PosPage() {
                 quantity: l.quantity,
               },
         ),
-      });
+      };
+      let sale: Sale;
+      if (retrySaleIdRef.current) {
+        const resumed = await getSaleApi(retrySaleIdRef.current);
+        if (resumed.status === "DRAFT") {
+          sale = resumed;
+        } else {
+          retrySaleIdRef.current = null;
+          sale = await createSaleApi(salePayload);
+          retrySaleIdRef.current = sale.id;
+        }
+      } else {
+        sale = await createSaleApi(salePayload);
+        retrySaleIdRef.current = sale.id;
+      }
       const paid = await checkoutSaleApi(sale.id, {
         payment_method: paymentMethod,
         paid_amount: isOnlinePayment ? undefined : paidAmount,
@@ -422,6 +439,7 @@ export function PosPage() {
       });
 
       if (paymentMethod === "CASH") {
+        retrySaleIdRef.current = null;
         setCheckoutOpen(false);
         refreshNotifications();
         setCart([]);
@@ -429,12 +447,26 @@ export function PosPage() {
         setSelectedCustomerId(null);
         navigate(`/pos/struk/${paid.id}`);
       } else {
+        retrySaleIdRef.current = null;
         setPendingSale(paid);
         setPaymentStatus("PENDING");
         refreshNotifications();
       }
     } catch (e) {
-      const err = e as { message?: string; errors?: Record<string, string[]> };
+      const err = e as {
+        message?: string;
+        code?: string;
+        errors?: Record<string, string[]>;
+      };
+      if (err.code === "PAYMENT_GATEWAY_UNAVAILABLE") {
+        setPaymentMethod("CASH");
+        toast.error(
+          err.message ||
+            "Payment gateway sedang gangguan. Silakan gunakan metode tunai dahulu.",
+        );
+        return;
+      }
+      retrySaleIdRef.current = null;
       if (err.errors) {
         const msg = Object.values(err.errors).flat().join(" ");
         toast.error(msg || err.message || "Checkout gagal.");

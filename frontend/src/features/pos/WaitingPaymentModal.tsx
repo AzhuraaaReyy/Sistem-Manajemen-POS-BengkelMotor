@@ -45,7 +45,7 @@ export function WaitingPaymentModal({ sale, onPaid, onExpired, onClose }: Props)
       if (remaining <= 0) {
         setStatus("EXPIRED");
         try {
-          await expireSaleApi(sale.id, "Waktu pembayaran habis (10 menit)");
+          await expireSaleApi(sale.id, "Waktu pembayaran habis (5 menit)");
         } catch {
           // Silent fail - cron job will handle it
         }
@@ -79,7 +79,7 @@ export function WaitingPaymentModal({ sale, onPaid, onExpired, onClose }: Props)
 
   const minutes = Math.floor(timeLeft / 60);
   const seconds = timeLeft % 60;
-  const progress = timeLeft / (10 * 60);
+  const progress = timeLeft / (5 * 60);
   const isWarning = timeLeft <= 180;
 
   const copyVa = useCallback(async () => {
@@ -333,7 +333,7 @@ export function WaitingPaymentModal({ sale, onPaid, onExpired, onClose }: Props)
             </div>
             <h3 className="text-lg font-semibold text-gray-900">Pembayaran Kedaluwarsa</h3>
             <p className="text-sm text-gray-500 max-w-xs mx-auto">
-              Waktu pembayaran (10 menit) telah habis. Stok telah dikembalikan otomatis.
+              Waktu pembayaran (5 menit) telah habis. Stok telah dikembalikan otomatis.
             </p>
             <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-destructive/10 text-destructive text-sm font-medium">
               <XCircleIcon className="h-4 w-4" aria-hidden="true" />
