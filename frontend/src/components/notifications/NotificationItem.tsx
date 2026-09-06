@@ -17,7 +17,12 @@ export function NotificationItem({ notification, onMarkAsRead }: Props) {
     (notification as any).data?.product_image ||
     (notification as any).data?.image;
 
-  const icon = getIcon(notification.type);
+  // Mendapatkan ikon berdasarkan tipe dan judul/pesan (misal: kedaluwarsa, batal/void, sukses)
+  const icon = getIcon(
+    notification.type,
+    notification.title,
+    notification.message,
+  );
 
   return (
     <button
@@ -32,7 +37,7 @@ export function NotificationItem({ notification, onMarkAsRead }: Props) {
       {/* 
         CONTAINER GAMBAR / BADGE:
         - Jika imageUrl ada -> Tampilkan foto produk dari backend
-        - Jika imageUrl kosong / gagal dimuat -> Tampilkan badge icon default
+        - Jika imageUrl kosong / gagal dimuat -> Tampilkan badge icon default sesuai status
       */}
       <div className="h-10 w-10 shrink-0 overflow-hidden rounded-lg flex items-center justify-center">
         {imageUrl ? (
@@ -47,7 +52,7 @@ export function NotificationItem({ notification, onMarkAsRead }: Props) {
               const parent = imgElement.parentElement;
               if (parent) {
                 parent.className = `flex h-full w-full items-center justify-center rounded-lg ${icon.bgColor} ${icon.color}`;
-                parent.innerHTML = `<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">${getIconSvgPath(notification.type)}</svg>`;
+                parent.innerHTML = `<svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">${getIconSvgPath(notification.type, notification.title, notification.message)}</svg>`;
               }
             }}
           />
@@ -97,18 +102,35 @@ export function NotificationItem({ notification, onMarkAsRead }: Props) {
   );
 }
 
-function getIconSvgPath(type: string): string {
-  switch (type) {
-    case "STOCK":
-      return '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />';
-    case "TRANSACTION":
-      return '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />';
-    default:
-      return '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />';
+function getIconSvgPath(
+  type: string,
+  title: string = "",
+  message: string = "",
+): string {
+  const lowerText = (title + " " + message).toLowerCase();
+
+  if (type === "STOCK") {
+    return '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" />';
   }
+
+  if (type === "TRANSACTION") {
+    if (
+      lowerText.includes("kedaluwarsa") ||
+      lowerText.includes("batal") ||
+      lowerText.includes("void") ||
+      lowerText.includes("expired")
+    ) {
+      return '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />';
+    }
+    return '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />';
+  }
+
+  return '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />';
 }
 
-function getIcon(type: string) {
+function getIcon(type: string, title: string = "", message: string = "") {
+  const lowerText = (title + " " + message).toLowerCase();
+
   switch (type) {
     case "STOCK":
       return {
@@ -131,6 +153,34 @@ function getIcon(type: string) {
         ),
       };
     case "TRANSACTION":
+      // Cek apakah transaksi kedaluwarsa, batal, atau void
+      if (
+        lowerText.includes("kedaluwarsa") ||
+        lowerText.includes("batal") ||
+        lowerText.includes("void") ||
+        lowerText.includes("expired")
+      ) {
+        return {
+          color: "text-red-600",
+          bgColor: "bg-red-100",
+          element: (
+            <svg
+              className="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          ),
+        };
+      }
+      // Transaksi sukses / paid
       return {
         color: "text-emerald-600",
         bgColor: "bg-emerald-100",

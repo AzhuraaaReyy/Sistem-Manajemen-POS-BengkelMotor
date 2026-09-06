@@ -30,6 +30,11 @@ Route::prefix('v1')->group(function () {
     Route::post('payments/webhook/midtrans', [PaymentWebhookController::class, 'handle'])
         ->middleware('throttle:30,1');
 
+    // WhatsApp Webhook (public, rate-limited, CSRF-exempt)
+    Route::get('whatsapp/webhook', [App\Http\Controllers\Api\WhatsAppWebhookController::class, 'verify']);
+    Route::post('whatsapp/webhook', [App\Http\Controllers\Api\WhatsAppWebhookController::class, 'handle'])
+        ->middleware('throttle:60,1');
+
     // Payment simulation (development only)
     Route::post('payments/simulate/{saleCode}', [PaymentWebhookController::class, 'simulatePayment'])
         ->middleware('throttle:10,1');
@@ -117,6 +122,17 @@ Route::prefix('v1')->group(function () {
 
         // Audit logs (Admin only)
         Route::get('audit-logs', [AuditController::class, 'index'])->middleware('role:ADMIN');
+
+        // WhatsApp Chat Management (Admin only)
+        Route::get('whatsapp/chats', [App\Http\Controllers\Api\WhatsAppChatController::class, 'index'])->middleware('role:ADMIN');
+        Route::get('whatsapp/chats/{chat}', [App\Http\Controllers\Api\WhatsAppChatController::class, 'show'])->middleware('role:ADMIN');
+        Route::post('whatsapp/chats/{chat}/takeover', [App\Http\Controllers\Api\WhatsAppChatController::class, 'takeover'])->middleware('role:ADMIN');
+        Route::post('whatsapp/chats/{chat}/release', [App\Http\Controllers\Api\WhatsAppChatController::class, 'release'])->middleware('role:ADMIN');
+        Route::post('whatsapp/chats/{chat}/send', [App\Http\Controllers\Api\WhatsAppChatController::class, 'sendMessage'])->middleware('role:ADMIN');
+
+        // Booking Approval (Admin only)
+        Route::post('whatsapp/bookings/{booking}/approve', [App\Http\Controllers\Api\WhatsAppBookingController::class, 'approve'])->middleware('role:ADMIN');
+        Route::post('whatsapp/bookings/{booking}/reject', [App\Http\Controllers\Api\WhatsAppBookingController::class, 'reject'])->middleware('role:ADMIN');
 
         // Notifications
         Route::get('notifications', [NotificationController::class, 'index']);

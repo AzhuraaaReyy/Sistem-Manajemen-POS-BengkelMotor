@@ -16,6 +16,7 @@ import { SalesHistoryPage } from "@/features/sales-history/SalesHistoryPage";
 import { ReceiptPage } from "@/features/sales-history/ReceiptPage";
 import { UsersPage } from "@/features/users/UsersPage";
 import { AuditPage } from "@/features/audit/AuditPage";
+import { WhatsAppChatsPage } from "@/features/whatsapp/WhatsAppChatsPage";
 import { LoadingState } from "@/components/ui/LoadingState";
 
 function RequireAuth({ children }: { children: ReactNode }) {
@@ -125,6 +126,14 @@ export const router = createBrowserRouter([
         element: (
           <RequireRole roles={["ADMIN"]}>
             <AuditPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: "whatsapp-chats",
+        element: (
+          <RequireRole roles={["ADMIN"]}>
+            <WhatsAppChatsPage />
           </RequireRole>
         ),
       },

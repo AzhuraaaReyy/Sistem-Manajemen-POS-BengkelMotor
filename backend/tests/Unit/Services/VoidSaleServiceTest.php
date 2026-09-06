@@ -88,18 +88,25 @@ class VoidSaleServiceTest extends TestCase
         app(VoidSaleService::class)->void($sale, '   ');
     }
 
-    public function test_cannot_void_draft_sale(): void
+    public function test_cashier_can_void_draft_sale(): void
     {
         $cashier = $this->cashier();
         $this->actingAs($cashier);
         $sale = Sale::factory()->for($cashier, 'cashier')->create();
 
-        $this->actingAs($this->admin());
+        $voided = app(VoidSaleService::class)->void($sale, 'Alasan');
 
-        $this->expectException(RuntimeException::class);
-        $this->expectExceptionCode(409);
+        $this->assertSame(Sale::STATUS_VOID, $voided->status);
+        $this->assertSame($cashier->id, $voided->voided_by);
+        $this->assertSame('Alasan', $voided->void_reason);
 
-        app(VoidSaleService::class)->void($sale, 'Alasan');
+        $this->assertSame(
+            0,
+            StockMovement::where('reference_type', 'sale')
+                ->where('reference_id', $sale->id)
+                ->where('type', StockMovement::TYPE_VOID_RETURN)
+                ->count()
+        );
     }
 
     public function test_cannot_void_already_voided_sale(): void
