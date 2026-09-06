@@ -21,6 +21,8 @@ class SaleResource extends JsonResource
             'paid_at' => $this->paid_at,
             'void_reason' => $this->void_reason,
             'voided_at' => $this->voided_at,
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
             'payment_expires_at' => $this->whenLoaded('latestCharge', fn() => $this->latestCharge?->expires_at),
             'gateway_transaction_id' => $this->whenLoaded('latestCharge', fn() => $this->latestCharge?->gateway_transaction_id),
             'gateway_type' => $this->whenLoaded('latestCharge', fn() => $this->latestCharge?->gateway_type),

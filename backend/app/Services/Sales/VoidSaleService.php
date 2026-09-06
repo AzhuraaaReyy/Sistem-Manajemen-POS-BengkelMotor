@@ -58,10 +58,20 @@ class VoidSaleService
             // concurrent void requests for the same sale cannot both proceed
             // (prevents double VOID_RETURN stock movements).
             $sale = Sale::whereKey($sale->id)->lockForUpdate()->firstOrFail();
-            if ($sale->status !== Sale::STATUS_PAID) {
-                throw new RuntimeException('Only PAID sales can be voided.', 409);
+            
+            if ($sale->status === Sale::STATUS_VOID) {
+                throw new RuntimeException('Transaksi sudah dibatalkan.', 409);
+            }
+            if ($sale->status === Sale::STATUS_EXPIRED) {
+                throw new RuntimeException('Transaksi sudah kedaluwarsa.', 409);
             }
 
+            $allowedStatuses = [Sale::STATUS_DRAFT, Sale::STATUS_PENDING, Sale::STATUS_PAID];
+            if (!in_array($sale->status, $allowedStatuses, true)) {
+                throw new RuntimeException('Status transaksi tidak valid untuk dibatalkan.', 409);
+            }
+
+            $originalStatus = $sale->status;
             $sale->load(['items' => fn($q) => $q->where('item_type', SaleItem::TYPE_PRODUCT)]);
 
             $sale->status = Sale::STATUS_VOID;
@@ -70,7 +80,9 @@ class VoidSaleService
             $sale->void_reason = $reason;
             $sale->save();
 
-            $this->ledger->incrementForSale($sale, $sale->items, $user->id, StockMovement::TYPE_VOID_RETURN);
+            if ($originalStatus === Sale::STATUS_PAID) {
+                $this->ledger->incrementForSale($sale, $sale->items, $user->id, StockMovement::TYPE_VOID_RETURN);
+            }
 
             $this->audit->log(
                 AuditLog::ACTION_SALE_VOIDED,

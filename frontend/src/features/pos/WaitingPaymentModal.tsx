@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { getSaleApi } from "@/lib/api/sales";
+import { getSaleApi, expireSaleApi } from "@/lib/api/sales";
 import { simulatePaymentApi } from "@/lib/api/payments";
 import { formatRupiah } from "@/lib/formatters";
 import { Copy, Clock, CheckCircle, XCircle, CreditCard, Loader2, Shield, Check, XCircle as XCircleIcon, AlertCircle, Info } from "lucide-react";
@@ -39,18 +39,23 @@ export function WaitingPaymentModal({ sale, onPaid, onExpired, onClose }: Props)
   useEffect(() => {
     if (!sale.payment_expires_at) return;
     const expires = new Date(sale.payment_expires_at).getTime();
-    const tick = () => {
+    const tick = async () => {
       const remaining = Math.max(0, Math.floor((expires - Date.now()) / 1000));
       setTimeLeft(remaining);
       if (remaining <= 0) {
         setStatus("EXPIRED");
+        try {
+          await expireSaleApi(sale.id, "Waktu pembayaran habis (10 menit)");
+        } catch {
+          // Silent fail - cron job will handle it
+        }
         onExpired();
       }
     };
     tick();
     const interval = setInterval(tick, 1000);
     return () => clearInterval(interval);
-  }, [sale.payment_expires_at, onExpired]);
+  }, [sale.payment_expires_at, sale.id, onExpired]);
 
   // Poll for payment status
   useEffect(() => {

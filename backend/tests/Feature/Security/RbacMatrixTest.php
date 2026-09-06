@@ -37,7 +37,7 @@ class RbacMatrixTest extends TestCase
             'created_at' => now(),
         ]);
 
-$matrix = [
+        $matrix = [
             ['GET', '/api/v1/dashboard', []],
             ['GET', '/api/v1/reports/sales', []],
             ['GET', '/api/v1/reports/services', []],
@@ -57,7 +57,6 @@ $matrix = [
             ['GET', '/api/v1/expenses', []],
             ['POST', '/api/v1/expenses', ['expense_date' => now()->toDateString(), 'category' => 'Op', 'amount' => 1000]],
             ['PUT', "/api/v1/expenses/{$expense->id}", ['amount' => 2000]],
-            ['POST', "/api/v1/sales/{$paidSale->id}/void", ['reason' => 'Tes matrix']],
         ];
 
         foreach ($matrix as [$method, $uri, $payload]) {

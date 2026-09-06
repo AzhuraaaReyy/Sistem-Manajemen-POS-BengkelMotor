@@ -77,19 +77,22 @@ class VoidSaleTest extends TestCase
         );
     }
 
-    public function test_draft_sale_cannot_be_voided(): void
+    public function test_cashier_can_void_draft_sale(): void
     {
         $cashier = $this->cashier();
-        $admin = $this->admin();
         $product = Product::factory()->create();
 
         $saleId = $this->actingAs($cashier)->postJson('/api/v1/sales', [
             'items' => [['item_type' => 'PRODUCT', 'product_id' => $product->id, 'quantity' => 1]],
         ])->json('data.id');
 
-        $response = $this->actingAs($admin)->postJson("/api/v1/sales/{$saleId}/void", ['reason' => 'Coba void draft']);
+        $response = $this->actingAs($cashier)->postJson("/api/v1/sales/{$saleId}/void", ['reason' => 'Void draft sale']);
 
-        $response->assertStatus(409);
+        $response->assertStatus(200)->assertJsonPath('data.status', 'VOID');
+        $this->assertSame(
+            0,
+            StockMovement::where('sale_id', $saleId)->where('type', StockMovement::TYPE_VOID_RETURN)->count()
+        );
     }
 
     public function test_voided_by_cannot_be_spoofed_via_request_body(): void
