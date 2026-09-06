@@ -76,6 +76,37 @@ class OnlineCheckoutTest extends TestCase
         $this->assertDatabaseCount('payment_charges', 0);
     }
 
+    public function test_checkout_with_va_creates_pending_sale_and_charge(): void
+    {
+        $cashier = $this->cashier();
+        $this->actingAs($cashier);
+        $sale = Sale::factory()->for($cashier, 'cashier')->create();
+        $product = Product::factory()->create(['current_stock' => 10, 'sale_price' => 1000]);
+        $sale->items()->create([
+            'item_type' => SaleItem::TYPE_PRODUCT,
+            'product_id' => $product->id,
+            'quantity' => 2,
+            'unit_price' => 1000,
+            'subtotal' => 2000,
+            'item_name_snapshot' => $product->name,
+        ]);
+        $sale->update(['subtotal' => 2000, 'grand_total' => 2000]);
+
+        $response = $this->postJson("/api/v1/sales/{$sale->id}/checkout", [
+            'payment_method' => 'VA',
+        ]);
+
+        $response->assertOk();
+        $response->assertJsonPath('data.status', 'PENDING');
+        $this->assertDatabaseHas('payment_charges', [
+            'sale_id' => $sale->id,
+            'method' => 'VA',
+            'status' => 'PENDING',
+        ]);
+        $product->refresh();
+        $this->assertSame(8, $product->current_stock);
+    }
+
     public function test_sale_resource_does_not_expose_gateway_raw_response(): void
     {
         $cashier = $this->cashier();

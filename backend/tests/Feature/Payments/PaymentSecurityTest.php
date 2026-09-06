@@ -135,4 +135,13 @@ class PaymentSecurityTest extends TestCase
         $product->refresh();
         $this->assertGreaterThanOrEqual(9, $product->current_stock);
     }
+
+    public function test_simulate_payment_returns_403_outside_development(): void
+    {
+        $sale = $this->createPendingSaleWithCharge();
+
+        $response = $this->postJson("/api/v1/payments/simulate/{$sale->sale_code}");
+
+        $response->assertStatus(403);
+    }
 }

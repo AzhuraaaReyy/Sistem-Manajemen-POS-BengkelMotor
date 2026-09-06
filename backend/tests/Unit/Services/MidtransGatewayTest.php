@@ -4,7 +4,9 @@ namespace Tests\Unit\Services;
 
 use App\Services\Payments\DTO\PendingChargeRequest;
 use App\Services\Payments\Gateways\MidtransGateway;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 use Tests\TestCase;
 
 class MidtransGatewayTest extends TestCase
@@ -116,5 +118,47 @@ class MidtransGatewayTest extends TestCase
 
         $this->assertSame('1234567890', $result->vaNumber);
         $this->assertSame('VA', $result->method);
+    }
+
+    public function test_create_charge_throws_runtime_exception_on_5xx(): void
+    {
+        Http::fake([
+            'api.sandbox.midtrans.com/v2/charge' => Http::response('error', 500),
+        ]);
+
+        $gateway = new MidtransGateway();
+        try {
+            $gateway->createCharge(new PendingChargeRequest(
+                orderId: 1,
+                saleCode: 'SALE-001',
+                method: 'QRIS',
+                grossAmount: '90000.00',
+                items: [['id' => 1, 'name' => 'Product', 'price' => 90000, 'quantity' => 1]],
+            ));
+            $this->fail('Expected RuntimeException was not thrown');
+        } catch (RuntimeException $e) {
+            $this->assertSame(500, $e->getCode());
+        }
+    }
+
+    public function test_create_charge_propagates_connection_exception(): void
+    {
+        Http::fake([
+            'api.sandbox.midtrans.com/v2/charge' => fn () => throw new ConnectionException('Connection refused'),
+        ]);
+
+        $gateway = new MidtransGateway();
+        try {
+            $gateway->createCharge(new PendingChargeRequest(
+                orderId: 1,
+                saleCode: 'SALE-001',
+                method: 'QRIS',
+                grossAmount: '90000.00',
+                items: [['id' => 1, 'name' => 'Product', 'price' => 90000, 'quantity' => 1]],
+            ));
+            $this->fail('Expected ConnectionException was not thrown');
+        } catch (ConnectionException $e) {
+            $this->assertSame('Connection refused', $e->getMessage());
+        }
     }
 }
