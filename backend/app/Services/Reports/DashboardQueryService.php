@@ -185,10 +185,11 @@ class DashboardQueryService
             ->toArray();
     }
 
-    public function recentSales(int $limit = 5): array
+    public function recentSales(Carbon $from, Carbon $to, int $limit = 5): array
     {
         return Sale::with('cashier:id,name')
             ->where('status', Sale::STATUS_PAID)
+            ->whereBetween('paid_at', [$from, $to])
             ->orderByDesc('paid_at')
             ->limit($limit)
             ->get()
@@ -205,10 +206,11 @@ class DashboardQueryService
             ->toArray();
     }
 
-    public function recentVoids(int $limit = 5): array
+    public function recentVoids(Carbon $from, Carbon $to, int $limit = 5): array
     {
         return Sale::with('cashier:id,name')
             ->where('status', Sale::STATUS_VOID)
+            ->whereBetween('voided_at', [$from, $to])
             ->orderByDesc('voided_at')
             ->limit($limit)
             ->get()

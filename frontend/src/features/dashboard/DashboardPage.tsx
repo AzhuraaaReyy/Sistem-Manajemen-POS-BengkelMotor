@@ -37,7 +37,7 @@ import {
   Trophy,
   Ban,
   Eye,
-  RefreshCw,
+  
 } from "lucide-react";
 
 type DatePreset = "today" | "7days" | "month" | "custom";
@@ -282,15 +282,7 @@ export function DashboardPage() {
     <div className="space-y-6 pb-8">
       {/* Header dengan Filter Button Tanggal */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
-            Dashboard
-          </h1>
-          <p className="text-xs sm:text-sm text-text-secondary">
-            Ringkasan kondisi bengkel
-          </p>
-        </div>
-
+        
         {/* Action Controls & Quick Date Filter Buttons */}
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
           {/* Group Button Filter Tanggal */}
@@ -372,18 +364,7 @@ export function DashboardPage() {
           </div>
 
           {/* Tombol Refresh */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="h-9 px-3 flex items-center gap-1.5 text-xs"
-          >
-            <RefreshCw
-              className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
-            />
-            Segarkan
-          </Button>
+         
         </div>
       </div>
 
@@ -698,7 +679,7 @@ export function DashboardPage() {
                 </h3>
               </div>
               <Link
-                to="/riwayat-transaksi"
+                to="/riwayat"
                 className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5"
               >
                 Lihat Semua <ChevronRight className="h-3 w-3" />
@@ -710,7 +691,7 @@ export function DashboardPage() {
                 <EmptyState title="Belum ada transaksi hari ini" />
               </div>
             ) : (
-              <div className="overflow-x-auto pt-2 flex-1">
+              <div className="overflow-x-auto pt-2 flex-1 hide-scrollbar">
                 <table className="w-full text-left text-xs min-w-[320px]">
                   <thead>
                     <tr className="border-b border-border/60 text-text-secondary">
@@ -830,7 +811,7 @@ function RecentVoidsList({ voids }: { voids: Sale[] }) {
             </h3>
           </div>
           <Link
-            to="/riwayat-transaksi"
+            to="/riwayat"
             className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5"
           >
             Lihat Semua <ChevronRight className="h-3 w-3" />

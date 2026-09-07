@@ -18,10 +18,12 @@ class DashboardController extends Controller
             'to' => 'nullable|date|after_or_equal:from|before_or_equal:today',
         ]);
 
-        // Default to today (not start of month) so dashboard shows today's data by default
-        $from = Carbon::parse($request->get('from', now()->startOfDay()->toDateString()));
-        // toDateTimeString() keeps 23:59:59 to include today's transactions
-        $to = Carbon::parse($request->get('to', now()->endOfDay()->toDateTimeString()));
+        // Default to today (not start of month) so dashboard shows today's data by default.
+        // Normalize the bounds to the full day so a date-only "to" (YYYY-MM-DD)
+        // still includes every transaction/expense on that end date — otherwise
+        // $to would collapse to midnight and silently drop the rest of the day.
+        $from = Carbon::parse($request->get('from', now()->startOfDay()->toDateString()))->startOfDay();
+        $to = Carbon::parse($request->get('to', now()->endOfDay()->toDateTimeString()))->endOfDay();
 
         return response()->json([
             'data' => [
@@ -31,8 +33,8 @@ class DashboardController extends Controller
                 'top_products' => $this->dashboard->topProducts($from, $to),
                 'top_services' => $this->dashboard->topServices($from, $to),
                 'low_stock' => $this->dashboard->lowStock(),
-                'recent_sales' => $this->dashboard->recentSales(),
-                'recent_voids' => $this->dashboard->recentVoids(),
+                'recent_sales' => $this->dashboard->recentSales($from, $to),
+                'recent_voids' => $this->dashboard->recentVoids($from, $to),
             ],
         ]);
     }
