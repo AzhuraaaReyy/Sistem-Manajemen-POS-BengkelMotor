@@ -111,7 +111,15 @@ function getPeriodComparisonLabel(preset: DatePreset): string {
   }
 }
 
-function TrendIndicator({ pct, metricType, comparisonLabel }: { pct: number; metricType: "positive" | "negative"; comparisonLabel?: string }) {
+function TrendIndicator({
+  pct,
+  metricType,
+  comparisonLabel,
+}: {
+  pct: number;
+  metricType: "positive" | "negative";
+  comparisonLabel?: string;
+}) {
   const isUp = pct > 0;
   const isNeutral = pct === 0;
 
@@ -119,20 +127,27 @@ function TrendIndicator({ pct, metricType, comparisonLabel }: { pct: number; met
   const color = isNeutral
     ? "text-text-secondary"
     : isUp === positiveMetric
-    ? "text-emerald-600"
-    : "text-rose-600";
-  const icon = isNeutral
-    ? <Minus className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-    : isUp
-    ? <TrendingUp className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-    : <TrendingDown className="h-3.5 w-3.5 shrink-0 mt-0.5" />;
+      ? "text-emerald-600"
+      : "text-rose-600";
+  const icon = isNeutral ? (
+    <Minus className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+  ) : isUp ? (
+    <TrendingUp className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+  ) : (
+    <TrendingDown className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+  );
   const label = isNeutral ? "→ 0%" : isUp ? `+${pct}%` : `${pct}%`;
   const compareText = comparisonLabel || "vs kemarin";
 
   return (
-    <div className="mt-2 flex items-start gap-1 text-[11px] font-medium leading-tight break-words" style={{ color: color }}>
+    <div
+      className="mt-2 flex items-start gap-1 text-[11px] font-medium leading-tight break-words"
+      style={{ color: color }}
+    >
       {icon}
-      <span className="break-words">{label} {compareText}</span>
+      <span className="break-words">
+        {label} {compareText}
+      </span>
     </div>
   );
 }
@@ -159,15 +174,25 @@ function KpiCard({
   return (
     <div className="relative overflow-hidden rounded-xl border border-border bg-surface p-3.5 shadow-sm flex flex-col justify-between h-full min-h-[135px]">
       <div>
-        <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconBg}`}>
+        <div
+          className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconBg}`}
+        >
           <Icon className={`h-4.5 w-4.5 ${iconColor}`} />
         </div>
         <div className="mt-2.5">
-          <p className="text-[11px] font-medium text-text-secondary leading-snug break-words">{title}</p>
-          <h4 className="mt-1 text-base xl:text-lg font-bold text-text-primary break-words">{value}</h4>
+          <p className="text-[11px] font-medium text-text-secondary leading-snug break-words">
+            {title}
+          </p>
+          <h4 className="mt-1 text-base xl:text-lg font-bold text-text-primary break-words">
+            {value}
+          </h4>
         </div>
       </div>
-      <TrendIndicator pct={trendPct} metricType={metricType} comparisonLabel={comparisonLabel} />
+      <TrendIndicator
+        pct={trendPct}
+        metricType={metricType}
+        comparisonLabel={comparisonLabel}
+      />
       <div className="absolute -bottom-6 -right-6 h-20 w-20 rounded-full bg-blue-500/10 blur-xl pointer-events-none" />
     </div>
   );
@@ -210,21 +235,45 @@ export function DashboardPage() {
   };
 
   const handleDatePickerOutsideClick = (e: MouseEvent) => {
-    if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
+    if (
+      datePickerRef.current &&
+      !datePickerRef.current.contains(e.target as Node)
+    ) {
       setShowCustomPicker(false);
     }
   };
 
   useEffect(() => {
     document.addEventListener("mousedown", handleDatePickerOutsideClick);
-    return () => document.removeEventListener("mousedown", handleDatePickerOutsideClick);
+    return () =>
+      document.removeEventListener("mousedown", handleDatePickerOutsideClick);
   }, []);
 
   if (isLoading) return <LoadingState label="Memuat dashboard..." />;
-  if (error) return <ErrorState message={(error as Error).message || "Gagal memuat dashboard."} onRetry={() => refetch()} />;
-  if (!data) return <ErrorState message="Tidak ada data dashboard." onRetry={() => refetch()} />;
+  if (error)
+    return (
+      <ErrorState
+        message={(error as Error).message || "Gagal memuat dashboard."}
+        onRetry={() => refetch()}
+      />
+    );
+  if (!data)
+    return (
+      <ErrorState
+        message="Tidak ada data dashboard."
+        onRetry={() => refetch()}
+      />
+    );
 
-  const { kpi, revenue_series, revenue_breakdown, top_products, low_stock, recent_sales, recent_voids } = data;
+  const {
+    kpi,
+    revenue_series,
+    revenue_breakdown,
+    top_products,
+    low_stock,
+    recent_sales,
+    recent_voids,
+  } = data;
 
   const periodLabel = getPeriodLabel(datePreset, apiParams);
   const comparisonLabel = getPeriodComparisonLabel(datePreset);
@@ -234,14 +283,21 @@ export function DashboardPage() {
       {/* Header dengan Filter Button Tanggal */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">Dashboard</h1>
-          <p className="text-xs sm:text-sm text-text-secondary">Ringkasan kondisi bengkel</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">
+            Dashboard
+          </h1>
+          <p className="text-xs sm:text-sm text-text-secondary">
+            Ringkasan kondisi bengkel
+          </p>
         </div>
 
         {/* Action Controls & Quick Date Filter Buttons */}
         <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
           {/* Group Button Filter Tanggal */}
-          <div className="flex items-center gap-1 bg-surface border border-border rounded-lg p-1 shadow-sm relative" ref={datePickerRef}>
+          <div
+            className="flex items-center gap-1 bg-surface border border-border rounded-lg p-1 shadow-sm relative"
+            ref={datePickerRef}
+          >
             {(["today", "7days", "month"] as DatePreset[]).map((preset) => (
               <Button
                 key={preset}
@@ -261,37 +317,53 @@ export function DashboardPage() {
               className="h-7 text-xs px-2.5 rounded-md font-medium flex items-center gap-1"
             >
               <Calendar className="h-3.5 w-3.5" />
-              {datePreset === "custom" ? `Custom (${apiParams.from})` : "Custom"}
+              {datePreset === "custom"
+                ? `Custom (${apiParams.from})`
+                : "Custom"}
             </Button>
 
             {/* Popover Rentang Tanggal Custom */}
             {showCustomPicker && (
               <div className="absolute right-0 top-full z-50 mt-2 w-64 bg-white border border-border rounded-xl shadow-lg p-3 space-y-3">
                 <div className="flex items-center justify-between border-b border-border pb-2">
-                  <span className="text-xs font-bold text-text-primary">Pilih Rentang Tanggal</span>
+                  <span className="text-xs font-bold text-text-primary">
+                    Pilih Rentang Tanggal
+                  </span>
                 </div>
                 <div className="space-y-2">
                   <div>
-                    <label className="text-[11px] text-text-secondary block mb-1">Dari Tanggal</label>
+                    <label className="text-[11px] text-text-secondary block mb-1">
+                      Dari Tanggal
+                    </label>
                     <input
                       type="date"
                       value={customRange.from}
-                      onChange={(e) => setCustomRange({ ...customRange, from: e.target.value })}
+                      onChange={(e) =>
+                        setCustomRange({ ...customRange, from: e.target.value })
+                      }
                       className="w-full px-2 py-1 border border-border rounded-md text-xs"
                       max={formatDateForInput(new Date())}
                     />
                   </div>
                   <div>
-                    <label className="text-[11px] text-text-secondary block mb-1">Sampai Tanggal</label>
+                    <label className="text-[11px] text-text-secondary block mb-1">
+                      Sampai Tanggal
+                    </label>
                     <input
                       type="date"
                       value={customRange.to}
-                      onChange={(e) => setCustomRange({ ...customRange, to: e.target.value })}
+                      onChange={(e) =>
+                        setCustomRange({ ...customRange, to: e.target.value })
+                      }
                       className="w-full px-2 py-1 border border-border rounded-md text-xs"
                       max={formatDateForInput(new Date())}
                     />
                   </div>
-                  <Button size="sm" className="w-full text-xs h-8 mt-1" onClick={handleCustomApply}>
+                  <Button
+                    size="sm"
+                    className="w-full text-xs h-8 mt-1"
+                    onClick={handleCustomApply}
+                  >
                     Terapkan
                   </Button>
                 </div>
@@ -307,7 +379,9 @@ export function DashboardPage() {
             disabled={isFetching}
             className="h-9 px-3 flex items-center gap-1.5 text-xs"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`}
+            />
             Segarkan
           </Button>
         </div>
@@ -321,27 +395,43 @@ export function DashboardPage() {
           icon={Wallet}
           iconBg="bg-blue-50"
           iconColor="text-blue-600"
-          trendPct={kpi.period_revenue_vs_prev_pct ?? kpi.today_revenue_vs_yesterday_pct ?? 0}
+          trendPct={
+            kpi.period_revenue_vs_prev_pct ??
+            kpi.today_revenue_vs_yesterday_pct ??
+            0
+          }
           metricType="positive"
           comparisonLabel={comparisonLabel}
         />
         <KpiCard
           title={`Transaksi ${periodLabel}`}
-          value={formatNumber(kpi.period_transactions ?? kpi.today_transactions ?? 0)}
+          value={formatNumber(
+            kpi.period_transactions ?? kpi.today_transactions ?? 0,
+          )}
           icon={ArrowLeftRight}
           iconBg="bg-purple-50"
           iconColor="text-purple-600"
-          trendPct={kpi.period_transactions_vs_prev_pct ?? kpi.today_transactions_vs_yesterday_pct ?? 0}
+          trendPct={
+            kpi.period_transactions_vs_prev_pct ??
+            kpi.today_transactions_vs_yesterday_pct ??
+            0
+          }
           metricType="positive"
           comparisonLabel={comparisonLabel}
         />
         <KpiCard
           title={`Servis ${periodLabel}`}
-          value={formatNumber(kpi.period_service_orders ?? kpi.today_service_orders ?? 0)}
+          value={formatNumber(
+            kpi.period_service_orders ?? kpi.today_service_orders ?? 0,
+          )}
           icon={Wrench}
           iconBg="bg-emerald-50"
           iconColor="text-emerald-600"
-          trendPct={kpi.period_service_orders_vs_prev_pct ?? kpi.today_service_orders_vs_yesterday_pct ?? 0}
+          trendPct={
+            kpi.period_service_orders_vs_prev_pct ??
+            kpi.today_service_orders_vs_yesterday_pct ??
+            0
+          }
           metricType="positive"
           comparisonLabel={comparisonLabel}
         />
@@ -351,7 +441,11 @@ export function DashboardPage() {
           icon={Tag}
           iconBg="bg-amber-50"
           iconColor="text-amber-600"
-          trendPct={kpi.period_expenses_vs_prev_pct ?? kpi.today_expenses_vs_yesterday_pct ?? 0}
+          trendPct={
+            kpi.period_expenses_vs_prev_pct ??
+            kpi.today_expenses_vs_yesterday_pct ??
+            0
+          }
           metricType="negative"
           comparisonLabel={comparisonLabel}
         />
@@ -384,7 +478,9 @@ export function DashboardPage() {
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-blue-600 shrink-0" />
               <div>
-                <h3 className="text-base font-bold text-text-primary">Grafik Omzet Harian</h3>
+                <h3 className="text-base font-bold text-text-primary">
+                  Grafik Omzet Harian
+                </h3>
                 <p className="text-xs text-text-secondary">{periodLabel}</p>
               </div>
             </div>
@@ -397,14 +493,21 @@ export function DashboardPage() {
           ) : (
             <div className="w-full h-64 pt-4">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={revenue_series} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <AreaChart
+                  data={revenue_series}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
                   <defs>
                     <linearGradient id="rev" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#2563eb" stopOpacity={0.2} />
                       <stop offset="95%" stopColor="#2563eb" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="#e5e7eb"
+                    vertical={false}
+                  />
                   <XAxis
                     dataKey="date"
                     fontSize={11}
@@ -421,7 +524,13 @@ export function DashboardPage() {
                     tickFormatter={(v) => (v >= 1000 ? `${v / 1000}k` : v)}
                   />
                   <Tooltip formatter={(v) => formatRupiah(Number(v))} />
-                  <Area type="monotone" dataKey="revenue" stroke="#2563eb" strokeWidth={2} fill="url(#rev)" />
+                  <Area
+                    type="monotone"
+                    dataKey="revenue"
+                    stroke="#2563eb"
+                    strokeWidth={2}
+                    fill="url(#rev)"
+                  />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
@@ -432,7 +541,9 @@ export function DashboardPage() {
         <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-2 pb-3 border-b border-border/50">
             <FileText className="h-5 w-5 text-blue-600 shrink-0" />
-            <h3 className="text-base font-bold text-text-primary">Ringkasan Penjualan</h3>
+            <h3 className="text-base font-bold text-text-primary">
+              Ringkasan Penjualan
+            </h3>
           </div>
 
           <div className="space-y-3 py-2 flex-1 flex flex-col justify-center">
@@ -444,19 +555,31 @@ export function DashboardPage() {
                     <Wallet className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-text-primary leading-snug break-words">Produk / Sparepart</p>
-                    <p className="text-[11px] text-text-secondary leading-tight mt-0.5 break-words">Penjualan barang</p>
+                    <p className="text-xs font-semibold text-text-primary leading-snug break-words">
+                      Produk / Sparepart
+                    </p>
+                    <p className="text-[11px] text-text-secondary leading-tight mt-0.5 break-words">
+                      Penjualan barang
+                    </p>
                   </div>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xs sm:text-sm font-bold text-text-primary">
-                    {formatRupiah((revenue_breakdown as RevenueBreakdown).products)}
+                    {formatRupiah(
+                      (revenue_breakdown as RevenueBreakdown).products,
+                    )}
                   </p>
                 </div>
               </div>
               <div className="mt-1 flex justify-end">
                 <TrendIndicator
-                  pct={(revenue_breakdown as RevenueBreakdown).products_vs_prev_pct ?? (revenue_breakdown as RevenueBreakdown).products_vs_yesterday_pct ?? 0}
+                  pct={
+                    (revenue_breakdown as RevenueBreakdown)
+                      .products_vs_prev_pct ??
+                    (revenue_breakdown as RevenueBreakdown)
+                      .products_vs_yesterday_pct ??
+                    0
+                  }
                   metricType="positive"
                   comparisonLabel={comparisonLabel}
                 />
@@ -471,19 +594,31 @@ export function DashboardPage() {
                     <Wrench className="h-4.5 w-4.5" />
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-text-primary leading-snug break-words">Jasa Servis</p>
-                    <p className="text-[11px] text-text-secondary leading-tight mt-0.5 break-words">Pendapatan jasa</p>
+                    <p className="text-xs font-semibold text-text-primary leading-snug break-words">
+                      Jasa Servis
+                    </p>
+                    <p className="text-[11px] text-text-secondary leading-tight mt-0.5 break-words">
+                      Pendapatan jasa
+                    </p>
                   </div>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-xs sm:text-sm font-bold text-text-primary">
-                    {formatRupiah((revenue_breakdown as RevenueBreakdown).services)}
+                    {formatRupiah(
+                      (revenue_breakdown as RevenueBreakdown).services,
+                    )}
                   </p>
                 </div>
               </div>
               <div className="mt-1 flex justify-end">
                 <TrendIndicator
-                  pct={(revenue_breakdown as RevenueBreakdown).services_vs_prev_pct ?? (revenue_breakdown as RevenueBreakdown).services_vs_yesterday_pct ?? 0}
+                  pct={
+                    (revenue_breakdown as RevenueBreakdown)
+                      .services_vs_prev_pct ??
+                    (revenue_breakdown as RevenueBreakdown)
+                      .services_vs_yesterday_pct ??
+                    0
+                  }
                   metricType="positive"
                   comparisonLabel={comparisonLabel}
                 />
@@ -502,7 +637,9 @@ export function DashboardPage() {
             <div className="flex items-center justify-between pb-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-blue-600 shrink-0" />
-                <h3 className="text-base font-bold text-text-primary">Produk Terlaris</h3>
+                <h3 className="text-base font-bold text-text-primary">
+                  Produk Terlaris
+                </h3>
               </div>
               <Link
                 to="/produk"
@@ -519,7 +656,10 @@ export function DashboardPage() {
             ) : (
               <ul className="space-y-2.5 pt-2 flex-1 overflow-y-auto">
                 {top_products.slice(0, 5).map((p, idx) => (
-                  <li key={p.product_id} className="flex items-center justify-between py-1 gap-2 border-b border-border/30 last:border-none">
+                  <li
+                    key={p.product_id}
+                    className="flex items-center justify-between py-1 gap-2 border-b border-border/30 last:border-none"
+                  >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <span className="text-xs font-bold text-text-secondary w-4 text-center shrink-0">
                         {idx + 1}
@@ -528,12 +668,18 @@ export function DashboardPage() {
                         <Package className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-text-primary break-words leading-tight">{p.name}</p>
-                        <p className="text-[11px] text-text-secondary">{formatNumber(p.total_qty)} terjual</p>
+                        <p className="text-xs font-semibold text-text-primary break-words leading-tight">
+                          {p.name}
+                        </p>
+                        <p className="text-[11px] text-text-secondary">
+                          {formatNumber(p.total_qty)} terjual
+                        </p>
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
-                      <p className="text-xs sm:text-sm font-bold text-text-primary">{formatRupiah(p.total_revenue)}</p>
+                      <p className="text-xs sm:text-sm font-bold text-text-primary">
+                        {formatRupiah(p.total_revenue)}
+                      </p>
                       <ChevronRight className="h-4 w-4 text-text-secondary" />
                     </div>
                   </li>
@@ -547,9 +693,14 @@ export function DashboardPage() {
             <div className="flex items-center justify-between pb-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-600 shrink-0" />
-                <h3 className="text-base font-bold text-text-primary">Transaksi Terbaru</h3>
+                <h3 className="text-base font-bold text-text-primary">
+                  Transaksi Terbaru
+                </h3>
               </div>
-              <Link to="/riwayat-transaksi" className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5">
+              <Link
+                to="/riwayat-transaksi"
+                className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5"
+              >
                 Lihat Semua <ChevronRight className="h-3 w-3" />
               </Link>
             </div>
@@ -572,15 +723,20 @@ export function DashboardPage() {
                   <tbody className="divide-y divide-border/40">
                     {recent_sales.slice(0, 5).map((s) => (
                       <tr key={s.id} className="group">
-                        <td className="py-2 font-semibold text-text-primary break-all">{s.sale_code}</td>
+                        <td className="py-2 font-semibold text-text-primary break-all">
+                          {s.sale_code}
+                        </td>
                         <td className="py-2 text-text-secondary break-words max-w-[100px]">
                           {s.cashier?.name || "Kasir Bengkel"}
                         </td>
-                        <td className="py-2 font-medium text-text-primary whitespace-nowrap">{formatRupiah(s.grand_total)}</td>
+                        <td className="py-2 font-medium text-text-primary whitespace-nowrap">
+                          {formatRupiah(s.grand_total)}
+                        </td>
                         <td className="py-2 text-right text-text-secondary whitespace-nowrap">
                           <div className="flex flex-col items-end">
                             <span>
-                              {formatDateTime(s.paid_at).split(",")[0] || formatDateTime(s.paid_at)}
+                              {formatDateTime(s.paid_at).split(",")[0] ||
+                                formatDateTime(s.paid_at)}
                             </span>
                             <span className="text-[10px] text-text-secondary">
                               {formatDateTime(s.paid_at).split(",")[1] || ""}
@@ -603,9 +759,14 @@ export function DashboardPage() {
             <div className="flex items-center justify-between pb-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0" />
-                <h3 className="text-base font-bold text-text-primary">Stok Rendah</h3>
+                <h3 className="text-base font-bold text-text-primary">
+                  Stok Rendah
+                </h3>
               </div>
-              <Link to="/produk" className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5">
+              <Link
+                to="/produk"
+                className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5"
+              >
                 Lihat Semua <ChevronRight className="h-3 w-3" />
               </Link>
             </div>
@@ -617,18 +778,27 @@ export function DashboardPage() {
             ) : (
               <ul className="space-y-2.5 pt-2 flex-1 overflow-y-auto">
                 {low_stock.slice(0, 5).map((p) => (
-                  <li key={p.id} className="flex items-center justify-between py-1 gap-2 border-b border-border/30 last:border-none">
+                  <li
+                    key={p.id}
+                    className="flex items-center justify-between py-1 gap-2 border-b border-border/30 last:border-none"
+                  >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 border border-border text-text-secondary">
                         <Package className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs font-semibold text-text-primary break-words leading-tight">{p.name}</p>
-                        <p className="text-[11px] text-text-secondary">{formatNumber(p.current_stock)} pcs</p>
+                        <p className="text-xs font-semibold text-text-primary break-words leading-tight">
+                          {p.name}
+                        </p>
+                        <p className="text-[11px] text-text-secondary">
+                          {formatNumber(p.current_stock)} pcs
+                        </p>
                       </div>
                     </div>
                     <div className="shrink-0">
-                      <Badge tone={p.current_stock === 0 ? "danger" : "warning"}>
+                      <Badge
+                        tone={p.current_stock === 0 ? "danger" : "warning"}
+                      >
                         {p.current_stock === 0 ? "Stok Habis" : "Stok Menipis"}
                       </Badge>
                     </div>
@@ -655,9 +825,14 @@ function RecentVoidsList({ voids }: { voids: Sale[] }) {
         <div className="flex items-center justify-between pb-3 border-b border-border/50">
           <div className="flex items-center gap-2">
             <Ban className="h-5 w-5 text-rose-600 shrink-0" />
-            <h3 className="text-base font-bold text-text-primary">Void Terbaru</h3>
+            <h3 className="text-base font-bold text-text-primary">
+              Void Terbaru
+            </h3>
           </div>
-          <Link to="/riwayat-transaksi" className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5">
+          <Link
+            to="/riwayat-transaksi"
+            className="text-xs font-medium text-primary hover:underline flex items-center gap-0.5"
+          >
             Lihat Semua <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
@@ -669,21 +844,29 @@ function RecentVoidsList({ voids }: { voids: Sale[] }) {
         ) : (
           <ul className="space-y-2.5 pt-2 flex-1 overflow-y-auto">
             {voids.slice(0, 5).map((s) => (
-              <li key={s.id} className="flex items-center justify-between py-1 gap-2 border-b border-border/40 last:border-none">
+              <li
+                key={s.id}
+                className="flex items-center justify-between py-1 gap-2 border-b border-border/40 last:border-none"
+              >
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 border border-rose-100">
                     <Ban className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-text-primary break-words leading-tight">{s.sale_code}</p>
+                    <p className="text-xs font-semibold text-text-primary break-words leading-tight">
+                      {s.sale_code}
+                    </p>
                     <p className="text-[11px] text-text-secondary break-words leading-tight">
-                      {s.void_reason || "Dibatalkan"} · {formatDateTime(s.voided_at)}
+                      {s.void_reason || "Dibatalkan"} ·{" "}
+                      {formatDateTime(s.voided_at)}
                     </p>
                   </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                  <span className="text-xs font-bold text-rose-600">{formatRupiah(s.grand_total)}</span>
+                  <span className="text-xs font-bold text-rose-600">
+                    {formatRupiah(s.grand_total)}
+                  </span>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -703,7 +886,11 @@ function RecentVoidsList({ voids }: { voids: Sale[] }) {
       <ConfirmDialog
         open={!!target}
         title="Detail Void"
-        message={target ? `Transaksi ${target.sale_code} (${formatRupiah(target.grand_total)}) dibatalkan dengan alasan: ${target.void_reason}` : ""}
+        message={
+          target
+            ? `Transaksi ${target.sale_code} (${formatRupiah(target.grand_total)}) dibatalkan dengan alasan: ${target.void_reason}`
+            : ""
+        }
         confirmLabel="Tutup"
         cancelLabel="Batal"
         onConfirm={() => setTarget(null)}
