@@ -35,7 +35,6 @@ import {
   Calendar,
   ChevronRight,
   Trophy,
-  ChevronDown,
   Ban,
   Eye,
   RefreshCw,
@@ -53,7 +52,7 @@ function getPresetLabel(preset: DatePreset): string {
     case "today":
       return "Hari Ini";
     case "7days":
-      return "7 Hari Terakhir";
+      return "7 Hari";
     case "month":
       return "Bulan Ini";
     case "custom":
@@ -123,17 +122,17 @@ function TrendIndicator({ pct, metricType, comparisonLabel }: { pct: number; met
     ? "text-emerald-600"
     : "text-rose-600";
   const icon = isNeutral
-    ? <Minus className="h-3.5 w-3.5" />
+    ? <Minus className="h-3.5 w-3.5 shrink-0 mt-0.5" />
     : isUp
-    ? <TrendingUp className="h-3.5 w-3.5" />
-    : <TrendingDown className="h-3.5 w-3.5" />;
-  const label = isNeutral ? "\u2192 0%" : isUp ? `+${pct}%` : `${pct}%`;
+    ? <TrendingUp className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+    : <TrendingDown className="h-3.5 w-3.5 shrink-0 mt-0.5" />;
+  const label = isNeutral ? "→ 0%" : isUp ? `+${pct}%` : `${pct}%`;
   const compareText = comparisonLabel || "vs kemarin";
 
   return (
-    <div className="mt-3 flex items-center gap-1 text-xs font-medium" style={{ color: color }}>
+    <div className="mt-2 flex items-start gap-1 text-[11px] font-medium leading-tight break-words" style={{ color: color }}>
       {icon}
-      <span>{label} {compareText}</span>
+      <span className="break-words">{label} {compareText}</span>
     </div>
   );
 }
@@ -158,14 +157,14 @@ function KpiCard({
   comparisonLabel?: string;
 }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between h-full">
+    <div className="relative overflow-hidden rounded-xl border border-border bg-surface p-3.5 shadow-sm flex flex-col justify-between h-full min-h-[135px]">
       <div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${iconBg}`}>
-          <Icon className={`h-5 w-5 ${iconColor}`} />
+        <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconBg}`}>
+          <Icon className={`h-4.5 w-4.5 ${iconColor}`} />
         </div>
-        <div className="mt-3">
-          <p className="text-xs font-medium text-text-secondary">{title}</p>
-          <h4 className="mt-1 text-lg font-bold text-text-primary truncate">{value}</h4>
+        <div className="mt-2.5">
+          <p className="text-[11px] font-medium text-text-secondary leading-snug break-words">{title}</p>
+          <h4 className="mt-1 text-base xl:text-lg font-bold text-text-primary break-words">{value}</h4>
         </div>
       </div>
       <TrendIndicator pct={trendPct} metricType={metricType} comparisonLabel={comparisonLabel} />
@@ -180,7 +179,7 @@ export function DashboardPage() {
     from: formatDateForInput(new Date()),
     to: formatDateForInput(new Date()),
   });
-  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showCustomPicker, setShowCustomPicker] = useState(false);
   const datePickerRef = useRef<HTMLDivElement>(null);
 
   const apiParams = useMemo(() => {
@@ -198,17 +197,21 @@ export function DashboardPage() {
 
   const handlePresetClick = (preset: DatePreset) => {
     setDatePreset(preset);
-    setShowDatePicker(false);
+    if (preset !== "custom") {
+      setShowCustomPicker(false);
+    } else {
+      setShowCustomPicker(true);
+    }
   };
 
   const handleCustomApply = () => {
     setDatePreset("custom");
-    setShowDatePicker(false);
+    setShowCustomPicker(false);
   };
 
   const handleDatePickerOutsideClick = (e: MouseEvent) => {
     if (datePickerRef.current && !datePickerRef.current.contains(e.target as Node)) {
-      setShowDatePicker(false);
+      setShowCustomPicker(false);
     }
   };
 
@@ -228,77 +231,90 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-6 pb-8">
-      {/* Page Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      {/* Header dengan Filter Button Tanggal */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-text-primary">Dashboard</h1>
           <p className="text-xs sm:text-sm text-text-secondary">Ringkasan kondisi bengkel</p>
         </div>
-        <div className="flex items-center gap-3 self-start sm:self-auto">
-          <div className="relative" ref={datePickerRef}>
+
+        {/* Action Controls & Quick Date Filter Buttons */}
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          {/* Group Button Filter Tanggal */}
+          <div className="flex items-center gap-1 bg-surface border border-border rounded-lg p-1 shadow-sm relative" ref={datePickerRef}>
+            {(["today", "7days", "month"] as DatePreset[]).map((preset) => (
+              <Button
+                key={preset}
+                variant={datePreset === preset ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => handlePresetClick(preset)}
+                className="h-7 text-xs px-2.5 rounded-md font-medium"
+              >
+                {getPresetLabel(preset)}
+              </Button>
+            ))}
+
             <Button
-              variant="ghost"
+              variant={datePreset === "custom" ? "primary" : "ghost"}
               size="sm"
-              onClick={() => setShowDatePicker(!showDatePicker)}
-              className="flex items-center gap-1"
+              onClick={() => handlePresetClick("custom")}
+              className="h-7 text-xs px-2.5 rounded-md font-medium flex items-center gap-1"
             >
-              <Calendar className="h-4 w-4" />
-              {getPresetLabel(datePreset)}
-              <ChevronDown className="h-3.5 w-3.5" />
+              <Calendar className="h-3.5 w-3.5" />
+              {datePreset === "custom" ? `Custom (${apiParams.from})` : "Custom"}
             </Button>
-            {showDatePicker && (
-              <div className="absolute right-0 top-full z-50 mt-1 w-64 bg-white border border-border rounded-lg shadow-lg p-3">
-                {(["today", "7days", "month"] as DatePreset[]).map((preset) => (
-                  <button
-                    key={preset}
-                    className={`w-full text-left px-3 py-2 rounded text-sm ${
-                      datePreset === preset ? "bg-primary text-primary-foreground" : "hover:bg-surface"
-                    }`}
-                    onClick={() => handlePresetClick(preset)}
-                  >
-                    {getPresetLabel(preset)}
-                  </button>
-                ))}
-                <hr className="my-2 border-border" />
+
+            {/* Popover Rentang Tanggal Custom */}
+            {showCustomPicker && (
+              <div className="absolute right-0 top-full z-50 mt-2 w-64 bg-white border border-border rounded-xl shadow-lg p-3 space-y-3">
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <span className="text-xs font-bold text-text-primary">Pilih Rentang Tanggal</span>
+                </div>
                 <div className="space-y-2">
-                  <label className="text-xs text-text-secondary block">Dari</label>
-                  <input
-                    type="date"
-                    value={customRange.from}
-                    onChange={(e) => setCustomRange({ ...customRange, from: e.target.value })}
-                    className="w-full px-2 py-1 border border-border rounded text-sm"
-                    max={formatDateForInput(new Date())}
-                  />
-                  <label className="text-xs text-text-secondary block">Sampai</label>
-                  <input
-                    type="date"
-                    value={customRange.to}
-                    onChange={(e) => setCustomRange({ ...customRange, to: e.target.value })}
-                    className="w-full px-2 py-1 border border-border rounded text-sm"
-                    max={formatDateForInput(new Date())}
-                  />
-                  <Button size="sm" className="w-full" onClick={handleCustomApply}>
+                  <div>
+                    <label className="text-[11px] text-text-secondary block mb-1">Dari Tanggal</label>
+                    <input
+                      type="date"
+                      value={customRange.from}
+                      onChange={(e) => setCustomRange({ ...customRange, from: e.target.value })}
+                      className="w-full px-2 py-1 border border-border rounded-md text-xs"
+                      max={formatDateForInput(new Date())}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] text-text-secondary block mb-1">Sampai Tanggal</label>
+                    <input
+                      type="date"
+                      value={customRange.to}
+                      onChange={(e) => setCustomRange({ ...customRange, to: e.target.value })}
+                      className="w-full px-2 py-1 border border-border rounded-md text-xs"
+                      max={formatDateForInput(new Date())}
+                    />
+                  </div>
+                  <Button size="sm" className="w-full text-xs h-8 mt-1" onClick={handleCustomApply}>
                     Terapkan
                   </Button>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Tombol Refresh */}
           <Button
             variant="secondary"
             size="sm"
             onClick={() => refetch()}
             disabled={isFetching}
-            className="flex items-center gap-1"
+            className="h-9 px-3 flex items-center gap-1.5 text-xs"
           >
-            <RefreshCw className={`h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin" : ""}`} />
             Segarkan
           </Button>
         </div>
       </div>
 
       {/* KPI Cards (6 Grid Layout) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 items-stretch">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5 items-stretch">
         <KpiCard
           title={`Omzet ${periodLabel}`}
           value={formatRupiah(kpi.period_revenue ?? kpi.today_revenue ?? 0)}
@@ -363,7 +379,7 @@ export function DashboardPage() {
       {/* Charts & Breakdown */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
         {/* Chart Card */}
-        <div className="lg:col-span-2 rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between h-full">
+        <div className="lg:col-span-2 rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center justify-between pb-3 border-b border-border/50">
             <div className="flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-blue-600 shrink-0" />
@@ -375,9 +391,11 @@ export function DashboardPage() {
           </div>
 
           {revenue_series.length === 0 ? (
-            <EmptyState title="Belum ada data omzet" />
+            <div className="flex-1 min-h-[220px] flex items-center justify-center">
+              <EmptyState title="Belum ada data omzet" />
+            </div>
           ) : (
-            <div className="w-full h-64 sm:h-72 pt-4 flex-1">
+            <div className="w-full h-64 pt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={revenue_series} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                   <defs>
@@ -411,27 +429,32 @@ export function DashboardPage() {
         </div>
 
         {/* Revenue Breakdown Card */}
-        <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between h-full">
+        <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between">
           <div className="flex items-center gap-2 pb-3 border-b border-border/50">
             <FileText className="h-5 w-5 text-blue-600 shrink-0" />
             <h3 className="text-base font-bold text-text-primary">Ringkasan Penjualan</h3>
           </div>
 
-          <div className="space-y-3 py-4 flex-1 flex flex-col justify-center">
-            <div className="flex items-center justify-between rounded-xl border border-border/60 bg-surface-2 p-3.5 gap-2">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Wallet className="h-5 w-5" />
+          <div className="space-y-3 py-2 flex-1 flex flex-col justify-center">
+            {/* Item Produk */}
+            <div className="rounded-xl border border-border/60 bg-surface-2 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 mt-0.5">
+                    <Wallet className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-text-primary leading-snug break-words">Produk / Sparepart</p>
+                    <p className="text-[11px] text-text-secondary leading-tight mt-0.5 break-words">Penjualan barang</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-text-primary truncate">Produk / Sparepart</p>
-                  <p className="text-xs text-text-secondary truncate">Penjualan barang</p>
+                <div className="text-right shrink-0">
+                  <p className="text-xs sm:text-sm font-bold text-text-primary">
+                    {formatRupiah((revenue_breakdown as RevenueBreakdown).products)}
+                  </p>
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm sm:text-base font-bold text-text-primary">
-                  {formatRupiah((revenue_breakdown as RevenueBreakdown).products)}
-                </p>
+              <div className="mt-1 flex justify-end">
                 <TrendIndicator
                   pct={(revenue_breakdown as RevenueBreakdown).products_vs_prev_pct ?? (revenue_breakdown as RevenueBreakdown).products_vs_yesterday_pct ?? 0}
                   metricType="positive"
@@ -440,20 +463,25 @@ export function DashboardPage() {
               </div>
             </div>
 
-            <div className="flex items-center justify-between rounded-xl border border-border/60 bg-surface-2 p-3.5 gap-2">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                  <Wrench className="h-5 w-5" />
+            {/* Item Jasa */}
+            <div className="rounded-xl border border-border/60 bg-surface-2 p-3">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2.5">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-50 text-blue-600 mt-0.5">
+                    <Wrench className="h-4.5 w-4.5" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-semibold text-text-primary leading-snug break-words">Jasa Servis</p>
+                    <p className="text-[11px] text-text-secondary leading-tight mt-0.5 break-words">Pendapatan jasa</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-text-primary truncate">Jasa Servis</p>
-                  <p className="text-xs text-text-secondary truncate">Pendapatan jasa</p>
+                <div className="text-right shrink-0">
+                  <p className="text-xs sm:text-sm font-bold text-text-primary">
+                    {formatRupiah((revenue_breakdown as RevenueBreakdown).services)}
+                  </p>
                 </div>
               </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm sm:text-base font-bold text-text-primary">
-                  {formatRupiah((revenue_breakdown as RevenueBreakdown).services)}
-                </p>
+              <div className="mt-1 flex justify-end">
                 <TrendIndicator
                   pct={(revenue_breakdown as RevenueBreakdown).services_vs_prev_pct ?? (revenue_breakdown as RevenueBreakdown).services_vs_yesterday_pct ?? 0}
                   metricType="positive"
@@ -468,9 +496,9 @@ export function DashboardPage() {
       {/* Operational Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-start">
         {/* Left Column: Top Products & Recent Sales */}
-        <div className="space-y-4 flex flex-col">
+        <div className="space-y-4">
           {/* Top Products */}
-          <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between min-h-[300px]">
+          <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between h-[340px]">
             <div className="flex items-center justify-between pb-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <Trophy className="h-5 w-5 text-blue-600 shrink-0" />
@@ -485,24 +513,26 @@ export function DashboardPage() {
             </div>
 
             {top_products.length === 0 ? (
-              <EmptyState title="Belum ada data" />
+              <div className="flex-1 flex items-center justify-center">
+                <EmptyState title="Belum ada data" />
+              </div>
             ) : (
-              <ul className="space-y-3 pt-3 flex-1">
+              <ul className="space-y-2.5 pt-2 flex-1 overflow-y-auto">
                 {top_products.slice(0, 5).map((p, idx) => (
-                  <li key={p.product_id} className="flex items-center justify-between py-1 gap-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-xs sm:text-sm font-bold text-text-secondary w-4 text-center shrink-0">
+                  <li key={p.product_id} className="flex items-center justify-between py-1 gap-2 border-b border-border/30 last:border-none">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="text-xs font-bold text-text-secondary w-4 text-center shrink-0">
                         {idx + 1}
                       </span>
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 border border-border text-text-secondary">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 border border-border text-text-secondary">
                         <Package className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">{p.name}</p>
-                        <p className="text-[11px] sm:text-xs text-text-secondary">{formatNumber(p.total_qty)} terjual</p>
+                        <p className="text-xs font-semibold text-text-primary break-words leading-tight">{p.name}</p>
+                        <p className="text-[11px] text-text-secondary">{formatNumber(p.total_qty)} terjual</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
+                    <div className="flex items-center gap-1 shrink-0">
                       <p className="text-xs sm:text-sm font-bold text-text-primary">{formatRupiah(p.total_revenue)}</p>
                       <ChevronRight className="h-4 w-4 text-text-secondary" />
                     </div>
@@ -513,7 +543,7 @@ export function DashboardPage() {
           </div>
 
           {/* Recent Sales */}
-          <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between min-h-[300px]">
+          <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between h-[340px]">
             <div className="flex items-center justify-between pb-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-blue-600 shrink-0" />
@@ -525,10 +555,12 @@ export function DashboardPage() {
             </div>
 
             {recent_sales.length === 0 ? (
-              <EmptyState title="Belum ada transaksi hari ini" />
+              <div className="flex-1 flex items-center justify-center">
+                <EmptyState title="Belum ada transaksi hari ini" />
+              </div>
             ) : (
-              <div className="overflow-x-auto pt-2 -mx-4 sm:mx-0 px-4 sm:px-0 flex-1">
-                <table className="w-full text-left text-xs min-w-[340px]">
+              <div className="overflow-x-auto pt-2 flex-1">
+                <table className="w-full text-left text-xs min-w-[320px]">
                   <thead>
                     <tr className="border-b border-border/60 text-text-secondary">
                       <th className="pb-2 font-medium">No. Transaksi</th>
@@ -540,12 +572,12 @@ export function DashboardPage() {
                   <tbody className="divide-y divide-border/40">
                     {recent_sales.slice(0, 5).map((s) => (
                       <tr key={s.id} className="group">
-                        <td className="py-2.5 font-semibold text-text-primary">{s.sale_code}</td>
-                        <td className="py-2.5 text-text-secondary truncate max-w-[90px]">
-                          {s.cashier?.name || "Servis / Produk"}
+                        <td className="py-2 font-semibold text-text-primary break-all">{s.sale_code}</td>
+                        <td className="py-2 text-text-secondary break-words max-w-[100px]">
+                          {s.cashier?.name || "Kasir Bengkel"}
                         </td>
-                        <td className="py-2.5 font-medium text-text-primary">{formatRupiah(s.grand_total)}</td>
-                        <td className="py-2.5 text-right text-text-secondary whitespace-nowrap">
+                        <td className="py-2 font-medium text-text-primary whitespace-nowrap">{formatRupiah(s.grand_total)}</td>
+                        <td className="py-2 text-right text-text-secondary whitespace-nowrap">
                           <div className="flex flex-col items-end">
                             <span>
                               {formatDateTime(s.paid_at).split(",")[0] || formatDateTime(s.paid_at)}
@@ -565,9 +597,9 @@ export function DashboardPage() {
         </div>
 
         {/* Right Column: Low Stock & Recent Voids */}
-        <div className="space-y-4 flex flex-col">
+        <div className="space-y-4">
           {/* Low Stock */}
-          <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between min-h-[300px]">
+          <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between h-[340px]">
             <div className="flex items-center justify-between pb-3 border-b border-border/50">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0" />
@@ -579,18 +611,20 @@ export function DashboardPage() {
             </div>
 
             {low_stock.length === 0 ? (
-              <EmptyState title="Semua stok aman" />
+              <div className="flex-1 flex items-center justify-center">
+                <EmptyState title="Semua stok aman" />
+              </div>
             ) : (
-              <ul className="space-y-3 pt-3 flex-1">
+              <ul className="space-y-2.5 pt-2 flex-1 overflow-y-auto">
                 {low_stock.slice(0, 5).map((p) => (
-                  <li key={p.id} className="flex items-center justify-between py-1 gap-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-2 border border-border text-text-secondary">
+                  <li key={p.id} className="flex items-center justify-between py-1 gap-2 border-b border-border/30 last:border-none">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-surface-2 border border-border text-text-secondary">
                         <Package className="h-4 w-4" />
                       </div>
                       <div className="min-w-0">
-                        <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">{p.name}</p>
-                        <p className="text-[11px] sm:text-xs text-text-secondary">{formatNumber(p.current_stock)} pcs</p>
+                        <p className="text-xs font-semibold text-text-primary break-words leading-tight">{p.name}</p>
+                        <p className="text-[11px] text-text-secondary">{formatNumber(p.current_stock)} pcs</p>
                       </div>
                     </div>
                     <div className="shrink-0">
@@ -617,7 +651,7 @@ function RecentVoidsList({ voids }: { voids: Sale[] }) {
 
   return (
     <>
-      <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between min-h-[300px]">
+      <div className="rounded-xl border border-border bg-surface p-4 shadow-sm flex flex-col justify-between h-[340px]">
         <div className="flex items-center justify-between pb-3 border-b border-border/50">
           <div className="flex items-center gap-2">
             <Ban className="h-5 w-5 text-rose-600 shrink-0" />
@@ -629,30 +663,32 @@ function RecentVoidsList({ voids }: { voids: Sale[] }) {
         </div>
 
         {voids.length === 0 ? (
-          <EmptyState title="Tidak ada transaksi dibatalkan" />
+          <div className="flex-1 flex items-center justify-center">
+            <EmptyState title="Tidak ada transaksi dibatalkan" />
+          </div>
         ) : (
-          <ul className="space-y-3 pt-3 flex-1">
+          <ul className="space-y-2.5 pt-2 flex-1 overflow-y-auto">
             {voids.slice(0, 5).map((s) => (
-              <li key={s.id} className="flex items-center justify-between py-1.5 gap-2 border-b border-border/40 last:border-none">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 border border-rose-100">
+              <li key={s.id} className="flex items-center justify-between py-1 gap-2 border-b border-border/40 last:border-none">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 border border-rose-100">
                     <Ban className="h-4 w-4" />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-xs sm:text-sm font-semibold text-text-primary truncate">{s.sale_code}</p>
-                    <p className="text-[11px] sm:text-xs text-text-secondary truncate">
-                      {s.void_reason || "Dibatalkan"} \u00b7 {formatDateTime(s.voided_at)}
+                    <p className="text-xs font-semibold text-text-primary break-words leading-tight">{s.sale_code}</p>
+                    <p className="text-[11px] text-text-secondary break-words leading-tight">
+                      {s.void_reason || "Dibatalkan"} · {formatDateTime(s.voided_at)}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0">
                   <span className="text-xs font-bold text-rose-600">{formatRupiah(s.grand_total)}</span>
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => setTarget(s)}
-                    className="h-8 px-2 text-xs text-text-secondary hover:text-text-primary flex items-center gap-1"
+                    className="h-7 px-1.5 text-xs text-text-secondary hover:text-text-primary flex items-center gap-1"
                   >
                     <Eye className="h-3.5 w-3.5" />
                     <span>Detail</span>
