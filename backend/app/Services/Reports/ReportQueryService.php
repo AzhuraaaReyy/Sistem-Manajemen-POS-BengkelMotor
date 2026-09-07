@@ -12,16 +12,17 @@ use Illuminate\Support\Facades\DB;
 
 class ReportQueryService
 {
-    public function sales(Carbon $from, Carbon $to): array
+    public function sales(Carbon $from, Carbon $to, ?int $page = 1, int $perPage = 10): array
     {
-        $sales = Sale::with(['cashier:id,name', 'items'])
+        $salesQuery = Sale::with(['cashier:id,name', 'items'])
             ->whereIn('status', [Sale::STATUS_PAID, Sale::STATUS_VOID])
             ->where(function ($q) use ($from, $to) {
                 $q->whereBetween('paid_at', [$from, $to])
                     ->orWhereBetween('voided_at', [$from, $to]);
             })
-            ->orderByDesc('created_at')
-            ->get();
+            ->orderByDesc('created_at');
+
+        $sales = $page === null ? $salesQuery->get() : $salesQuery->paginate($perPage, ['*'], 'page', $page);
 
         $revenue = Sale::where('status', Sale::STATUS_PAID)->whereBetween('paid_at', [$from, $to])->sum('grand_total');
         $discount = Sale::where('status', Sale::STATUS_PAID)->whereBetween('paid_at', [$from, $to])->sum('discount_amount');
@@ -66,18 +67,30 @@ class ReportQueryService
                     'void_reason' => $s->void_reason,
                 ];
             })->values(),
-        ];
+        ] + ($page === null ? [] : [
+            'transactions_pagination' => [
+                'current_page' => $sales->currentPage(),
+                'last_page' => $sales->lastPage(),
+                'per_page' => $sales->perPage(),
+                'total' => $sales->total(),
+            ],
+        ]);
     }
 
-    public function services(Carbon $from, Carbon $to): array
+    public function services(Carbon $from, Carbon $to, ?int $page = 1, int $perPage = 10): array
     {
-        $orders = ServiceOrder::with(['customer:id,name', 'mechanic:id,name'])
+        $ordersQuery = ServiceOrder::with(['customer:id,name', 'mechanic:id,name'])
             ->whereBetween('opened_at', [$from, $to])
-            ->orderByDesc('opened_at')
-            ->get();
+            ->orderByDesc('opened_at');
 
-        $orderCount = $orders->count();
-        $byStatus = $orders->groupBy('status')->map->count();
+        $orders = $page === null ? $ordersQuery->get() : $ordersQuery->paginate($perPage, ['*'], 'page', $page);
+
+        $allOrders = $page === null
+            ? $orders
+            : ServiceOrder::with(['mechanic:id,name'])->whereBetween('opened_at', [$from, $to])->get();
+
+        $orderCount = $allOrders->count();
+        $byStatus = $allOrders->groupBy('status')->map->count();
 
         $topServices = SaleItem::join('sales', 'sales.id', '=', 'sale_items.sale_id')
             ->where('sales.status', Sale::STATUS_PAID)
@@ -93,7 +106,7 @@ class ReportQueryService
                 'total' => (float) $r->total,
             ])->values();
 
-        $byMechanic = $orders->groupBy(fn($o) => optional($o->mechanic)->name ?? 'Belum ditentukan')
+        $byMechanic = $allOrders->groupBy(fn($o) => optional($o->mechanic)->name ?? 'Belum ditentukan')
             ->map->count();
 
         return [
@@ -117,20 +130,32 @@ class ReportQueryService
                 'opened_at' => $o->opened_at,
             ])->values(),
             'by_mechanic' => $byMechanic,
-        ];
+        ] + ($page === null ? [] : [
+            'orders_pagination' => [
+                'current_page' => $orders->currentPage(),
+                'last_page' => $orders->lastPage(),
+                'per_page' => $orders->perPage(),
+                'total' => $orders->total(),
+            ],
+        ]);
     }
 
-    public function inventory(Carbon $from, Carbon $to): array
+    public function inventory(Carbon $from, Carbon $to, ?int $page = 1, int $perPage = 10): array
     {
         $products = Product::where('is_active', true)->orderBy('name')->get();
+        $lowStock = $products->filter(fn($p) => $p->isLowStock())->values();
+        $lowStockTotal = $lowStock->count();
+        $lowStockRows = $page === null
+            ? $lowStock
+            : $lowStock->forPage($page, $perPage)->values();
 
         return [
             'summary' => [
                 'total_products' => $products->count(),
-                'low_stock_count' => $products->filter(fn($p) => $p->isLowStock())->count(),
+                'low_stock_count' => $lowStockTotal,
                 'inventory_value' => $products->sum(fn($p) => bcadd('0', bcmul((string) $p->current_stock, (string) $p->purchase_price, 2), 2)),
             ],
-            'low_stock' => $products->filter(fn($p) => $p->isLowStock())->values()->map(fn($p) => [
+            'low_stock' => $lowStockRows->map(fn($p) => [
                 'id' => $p->id,
                 'sku' => $p->sku,
                 'name' => $p->name,
@@ -158,10 +183,17 @@ class ReportQueryService
                 ->limit(10)->get()
                 ->map(fn($r) => ['name' => $r->item_name_snapshot, 'quantity' => (float) $r->qty])
                 ->values(),
-        ];
+        ] + ($page === null ? [] : [
+            'low_stock_pagination' => [
+                'current_page' => $page,
+                'last_page' => max(1, (int) ceil($lowStockTotal / $perPage)),
+                'per_page' => $perPage,
+                'total' => $lowStockTotal,
+            ],
+        ]);
     }
 
-    public function finance(Carbon $from, Carbon $to): array
+    public function finance(Carbon $from, Carbon $to, ?int $page = 1, int $perPage = 10): array
     {
         $revenue = Sale::where('status', Sale::STATUS_PAID)->whereBetween('paid_at', [$from, $to])->sum('grand_total');
         $cogs = SaleItem::join('sales', 'sales.id', '=', 'sale_items.sale_id')
@@ -170,28 +202,37 @@ class ReportQueryService
             ->whereBetween('sales.paid_at', [$from, $to])
             ->selectRaw('COALESCE(SUM(sale_items.purchase_price_snapshot * sale_items.quantity), 0) as cogs')
             ->value('cogs') ?? '0';
-        $expenses = Expense::whereBetween(DB::raw('DATE(expense_date)'), [$from->toDateString(), $to->toDateString()])->sum('amount');
-        $estimated = bcsub(bcsub((string) $revenue, (string) $cogs, 2), (string) $expenses, 2);
+        $expensesTotal = Expense::whereBetween(DB::raw('DATE(expense_date)'), [$from->toDateString(), $to->toDateString()])->sum('amount');
+        $estimated = bcsub(bcsub((string) $revenue, (string) $cogs, 2), (string) $expensesTotal, 2);
+
+        $expensesQuery = Expense::whereBetween(DB::raw('DATE(expense_date)'), [$from->toDateString(), $to->toDateString()])
+            ->with('createdBy:id,name')
+            ->orderByDesc('expense_date');
+
+        $expenses = $page === null ? $expensesQuery->get() : $expensesQuery->paginate($perPage, ['*'], 'page', $page);
 
         return [
             'summary' => [
                 'revenue' => $revenue,
                 'cogs' => $cogs,
-                'expenses' => $expenses,
+                'expenses' => $expensesTotal,
                 'estimated_result' => $estimated,
             ],
-            'expenses' => Expense::whereBetween(DB::raw('DATE(expense_date)'), [$from->toDateString(), $to->toDateString()])
-                ->with('createdBy:id,name')
-                ->orderByDesc('expense_date')
-                ->get()
-                ->map(fn($e) => [
-                    'id' => $e->id,
-                    'expense_date' => $e->expense_date,
-                    'category' => $e->category,
-                    'amount' => $e->amount,
-                    'description' => $e->description,
-                    'created_by' => optional($e->createdBy)->name,
-                ])->values(),
-        ];
+            'expenses' => $expenses->map(fn($e) => [
+                'id' => $e->id,
+                'expense_date' => $e->expense_date,
+                'category' => $e->category,
+                'amount' => $e->amount,
+                'description' => $e->description,
+                'created_by' => optional($e->createdBy)->name,
+            ])->values(),
+        ] + ($page === null ? [] : [
+            'expenses_pagination' => [
+                'current_page' => $expenses->currentPage(),
+                'last_page' => $expenses->lastPage(),
+                'per_page' => $expenses->perPage(),
+                'total' => $expenses->total(),
+            ],
+        ]);
     }
 }

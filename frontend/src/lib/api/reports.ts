@@ -8,6 +8,25 @@ export interface ReportParams {
   per_page?: number;
 }
 
+export interface ReportPaginationMeta {
+  current_page: number;
+  last_page: number;
+  per_page: number;
+  total: number;
+}
+
+export interface InventoryReportData {
+  summary: {
+    total_products: number;
+    low_stock_count: number;
+    inventory_value: string;
+  };
+  low_stock: Array<Record<string, any>>;
+  low_stock_pagination?: ReportPaginationMeta;
+  products: Array<Record<string, any>>;
+  top_sold: Array<Record<string, any>>;
+}
+
 async function getReport<T>(path: string, params: ReportParams): Promise<T> {
   const { data } = await client.get<ApiResponse<T>>(`/reports/${path}`, {
     params,
@@ -24,7 +43,7 @@ export function getServiceReportApi(params: ReportParams) {
 }
 
 export function getInventoryReportApi(params: ReportParams) {
-  return getReport<{ data: any[] }>("inventory", params);
+  return getReport<InventoryReportData>("inventory", params);
 }
 
 export function getFinanceReportApi(params: ReportParams) {

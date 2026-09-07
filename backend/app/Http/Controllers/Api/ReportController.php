@@ -29,25 +29,39 @@ class ReportController extends Controller
     public function sales(Request $request)
     {
         [$from, $to] = $this->range($request);
-        return response()->json(['data' => $this->reports->sales($from, $to)]);
+        [$page, $perPage] = $this->pageParams($request);
+
+        return response()->json(['data' => $this->reports->sales($from, $to, $page, $perPage)]);
     }
 
     public function services(Request $request)
     {
         [$from, $to] = $this->range($request);
-        return response()->json(['data' => $this->reports->services($from, $to)]);
+        [$page, $perPage] = $this->pageParams($request);
+
+        return response()->json(['data' => $this->reports->services($from, $to, $page, $perPage)]);
     }
 
     public function inventory(Request $request)
     {
         [$from, $to] = $this->range($request);
-        return response()->json(['data' => $this->reports->inventory($from, $to)]);
+        [$page, $perPage] = $this->pageParams($request);
+
+        return response()->json(['data' => $this->reports->inventory($from, $to, $page, $perPage)]);
     }
 
     public function finance(Request $request)
     {
         [$from, $to] = $this->range($request);
-        return response()->json(['data' => $this->reports->finance($from, $to)]);
+        [$page, $perPage] = $this->pageParams($request);
+
+        return response()->json(['data' => $this->reports->finance($from, $to, $page, $perPage)]);
+    }
+
+    private function pageParams(Request $request): array
+    {
+        $perPage = min(max($request->integer('per_page', 10), 1), 500);
+        return [$request->integer('page', 1), $perPage];
     }
 
     public function export(Request $request, string $type)
@@ -98,7 +112,7 @@ class ReportController extends Controller
 
     private function salesExportSections(Carbon $from, Carbon $to): array
     {
-        $data = $this->reports->sales($from, $to);
+        $data = $this->reports->sales($from, $to, null);
 
         return [
             'title' => 'Laporan Penjualan',
@@ -129,7 +143,7 @@ class ReportController extends Controller
 
     private function servicesExportSections(Carbon $from, Carbon $to): array
     {
-        $data = $this->reports->services($from, $to);
+        $data = $this->reports->services($from, $to, null);
 
         return [
             'title' => 'Laporan Servis',
@@ -162,7 +176,7 @@ class ReportController extends Controller
 
     private function inventoryExportSections(Carbon $from, Carbon $to): array
     {
-        $data = $this->reports->inventory($from, $to);
+        $data = $this->reports->inventory($from, $to, null);
 
         return [
             'title' => 'Laporan Stok',
@@ -201,7 +215,7 @@ class ReportController extends Controller
 
     private function financeExportSections(Carbon $from, Carbon $to): array
     {
-        $data = $this->reports->finance($from, $to);
+        $data = $this->reports->finance($from, $to, null);
 
         return [
             'title' => 'Laporan Keuangan',
