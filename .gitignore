@@ -11,7 +11,7 @@ backend/public/hot
 .env
 .env.*
 !.env.example
-.docs
+docs/
 # IDE
 .idea/
 .vscode/
