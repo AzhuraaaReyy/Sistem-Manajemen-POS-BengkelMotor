@@ -60,9 +60,16 @@ function getPresetLabel(preset: DatePreset): string {
   }
 }
 
+function toLocalDateStr(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 function getPresetRange(preset: DatePreset): CustomRange {
   const today = new Date();
-  const formatDate = (d: Date) => d.toISOString().split("T")[0];
+  const formatDate = (d: Date) => toLocalDateStr(d);
 
   switch (preset) {
     case "today":
@@ -82,7 +89,7 @@ function getPresetRange(preset: DatePreset): CustomRange {
 }
 
 function formatDateForInput(date: Date): string {
-  return date.toISOString().split("T")[0];
+  return toLocalDateStr(date);
 }
 
 function getPeriodLabel(preset: DatePreset, apiParams?: CustomRange): string {
@@ -212,7 +219,7 @@ export function DashboardPage() {
     return getPresetRange(datePreset);
   }, [datePreset, customRange]);
 
-  const { data, isLoading, error, refetch, isFetching } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ["dashboard", apiParams],
     queryFn: () => getDashboardApi(apiParams),
     refetchInterval: 10000,
@@ -707,8 +714,31 @@ export function DashboardPage() {
                         <td className="py-2 font-semibold text-text-primary break-all">
                           {s.sale_code}
                         </td>
-                        <td className="py-2 text-text-secondary break-words max-w-[100px]">
-                          {s.cashier?.name || "Kasir Bengkel"}
+                        <td className="py-2 text-text-primary break-words min-w-[140px]">
+                          {(s.items?.length ? s.items.slice(0, 2) : []).map((item) => (
+                            <span
+                              key={item.id}
+                              className="flex items-center gap-1.5 py-0.5"
+                            >
+                              <span className="truncate max-w-[150px]">
+                                {item.item_name_snapshot}
+                              </span>
+                              <span className="text-[10px] font-medium text-text-secondary whitespace-nowrap">
+                                ×{formatNumber(item.quantity)}
+                              </span>
+                            </span>
+                          ))}
+                          {s.items && s.items.length > 2 ? (
+                            <span className="block pt-0.5 text-[11px] text-text-secondary">
+                              +{s.items.length - 2} lainnya
+                            </span>
+                          ) : (
+                            !s.items?.length && (
+                              <span className="text-text-secondary">
+                                {s.cashier?.name || "Kasir Bengkel"}
+                              </span>
+                            )
+                          )}
                         </td>
                         <td className="py-2 font-medium text-text-primary whitespace-nowrap">
                           {formatRupiah(s.grand_total)}

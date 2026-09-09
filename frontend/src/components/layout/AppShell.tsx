@@ -102,13 +102,10 @@ export function AppShell() {
     setSearchError(null);
     searchTimeoutRef.current = window.setTimeout(async () => {
       try {
-        console.log("Searching for:", searchQuery);
         const results = await searchGlobalApi(searchQuery);
-        console.log("Search results:", results);
         setSearchResults(results);
         setSearchOpen(true);
       } catch (error: any) {
-        console.error("Search error:", error);
         setSearchError(error?.message || "Terjadi kesalahan saat mencari");
         setSearchResults(null);
         setSearchOpen(true);

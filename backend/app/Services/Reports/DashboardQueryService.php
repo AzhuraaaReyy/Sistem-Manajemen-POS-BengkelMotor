@@ -187,7 +187,7 @@ class DashboardQueryService
 
     public function recentSales(Carbon $from, Carbon $to, int $limit = 5): array
     {
-        return Sale::with('cashier:id,name')
+        return Sale::with(['cashier:id,name', 'items'])
             ->where('status', Sale::STATUS_PAID)
             ->whereBetween('paid_at', [$from, $to])
             ->orderByDesc('paid_at')
@@ -201,6 +201,18 @@ class DashboardQueryService
                 'payment_method' => $s->payment_method,
                 'paid_at' => $s->paid_at,
                 'cashier' => $s->cashier ? ['id' => $s->cashier->id, 'name' => $s->cashier->name] : null,
+                'items' => $s->items->map(fn ($item) => [
+                    'id' => $item->id,
+                    'sale_id' => $item->sale_id,
+                    'item_type' => $item->item_type,
+                    'product_id' => $item->product_id,
+                    'service_id' => $item->service_id,
+                    'item_code_snapshot' => $item->item_code_snapshot,
+                    'item_name_snapshot' => $item->item_name_snapshot,
+                    'quantity' => $item->quantity,
+                    'unit_price' => $item->unit_price,
+                    'subtotal' => $item->subtotal,
+                ])->values()->toArray(),
             ])
             ->values()
             ->toArray();
