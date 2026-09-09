@@ -43,3 +43,4 @@ backend/storage/*.key
 .agents
 cookies*.txt
 permasalahan.txt
+

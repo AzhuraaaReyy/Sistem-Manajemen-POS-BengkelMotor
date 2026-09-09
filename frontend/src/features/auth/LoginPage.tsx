@@ -32,7 +32,9 @@ export function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
-      setError("Email dan password wajib diisi.");
+      const msg = "Email dan password wajib diisi.";
+      setError(msg);
+      toast.error(msg);
       return;
     }
     setLoading(true);
@@ -52,18 +54,21 @@ export function LoginPage() {
         const wait = apiError.retryAfter
           ? Math.ceil(apiError.retryAfter)
           : null;
-        setError(
-          wait
-            ? `Terlalu banyak percobaan login. Mohon tunggu sekitar ${wait} detik sebelum mencoba lagi.`
-            : "Terlalu banyak percobaan login. Mohon tunggu beberapa saat sebelum mencoba lagi.",
-        );
+        const msg = wait
+          ? `Terlalu banyak percobaan login. Mohon tunggu sekitar ${wait} detik sebelum mencoba lagi.`
+          : "Terlalu banyak percobaan login. Mohon tunggu beberapa saat sebelum mencoba lagi.";
+        setError(msg);
+        toast.error(msg);
       } else if (apiError.errors && Object.keys(apiError.errors).length) {
-        setError(Object.values(apiError.errors).flat().join(" "));
+        const msg = Object.values(apiError.errors).flat().join(" ");
+        setError(msg);
+        toast.error(msg);
       } else {
-        setError(
+        const msg =
           apiError.message ||
-            "Login gagal. Periksa kembali username dan password.",
-        );
+          "Login gagal. Periksa kembali username dan password.";
+        setError(msg);
+        toast.error(msg);
       }
     } finally {
       setLoading(false);

@@ -9,6 +9,9 @@ const APP_BASE = API_BASE.replace(/\/api\/v1\/?$/, "");
 const RATE_LIMIT_MESSAGE =
   "Terlalu banyak permintaan. Mohon tunggu beberapa saat sebelum mencoba lagi.";
 
+const NETWORK_ERROR_MESSAGE =
+  "Tidak dapat terhubung ke server. Periksa koneksi internet Anda dan pastikan server sedang berjalan.";
+
 // Axios instance with withCredentials for Sanctum SPA cookie session.
 const client = axios.create({
   baseURL: API_BASE,
@@ -91,13 +94,18 @@ client.interceptors.response.use(
     const retryAfter =
       retryAfterRaw !== undefined ? Number(retryAfterRaw) : undefined;
 
+    // Network error: no response at all (server down, CORS blocked, DNS fail, etc.)
+    const isNetworkError = !error.response && error.request;
+
     const apiError: ApiError = {
       message:
-        status === 429
-          ? RATE_LIMIT_MESSAGE
-          : error.response?.data?.message ||
-            error.message ||
-            "Terjadi kesalahan pada server.",
+        isNetworkError
+          ? NETWORK_ERROR_MESSAGE
+          : status === 429
+            ? RATE_LIMIT_MESSAGE
+            : error.response?.data?.message ||
+              error.message ||
+              "Terjadi kesalahan pada server.",
       code: error.response?.data?.code,
       status,
       retryAfter: Number.isFinite(retryAfter) ? retryAfter : undefined,

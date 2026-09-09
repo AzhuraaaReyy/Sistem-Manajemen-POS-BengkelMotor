@@ -12,7 +12,14 @@ export async function loginApi(payload: LoginPayload): Promise<User> {
   // session cookie). Axios auto-sends X-XSRF-TOKEN from the cookie on every
   // subsequent request, so this only needs to run once before the first
   // mutating call.
-  await ensureCsrfCookie();
+  try {
+    await ensureCsrfCookie();
+  } catch {
+    throw {
+      message: "Gagal menghubungi server. Pastikan server berjalan dan coba lagi.",
+      status: undefined,
+    };
+  }
   // The POST /api/v1/auth/login sets the session cookie on success.
   const { data } = await client.post<ApiResponse<User>>("/auth/login", payload);
   return data.data;
