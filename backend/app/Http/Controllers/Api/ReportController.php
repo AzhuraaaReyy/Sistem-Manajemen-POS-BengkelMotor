@@ -18,11 +18,8 @@ class ReportController extends Controller
 
     private function range(Request $request): array
     {
-        $from = Carbon::parse($request->get('from', now()->startOfMonth()->toDateString()));
-        // toDateTimeString() (not toDateString()) so the default upper bound
-        // stays at 23:59:59 instead of collapsing to midnight, which would
-        // silently exclude today's own transactions from the default range.
-        $to = Carbon::parse($request->get('to', now()->endOfDay()->toDateTimeString()));
+        $from = Carbon::parse($request->get('from', now()->startOfMonth()->toDateString()))->startOfDay();
+        $to = Carbon::parse($request->get('to', now()->toDateString()))->endOfDay();
         return [$from, $to];
     }
 
@@ -133,7 +130,7 @@ class ReportController extends Controller
                     'heading' => 'Detail Transaksi',
                     'columns' => ['Kode', 'Tanggal', 'Kasir', 'Metode', 'Subtotal', 'Diskon', 'Total', 'Status'],
                     'rows' => collect($data['transactions'])->map(fn ($t) => [
-                        $t['sale_code'], $t['paid_at'], $t['cashier'], $t['payment_method'],
+                        $t['sale_code'], $this->exportDateTime($t['paid_at']), $t['cashier'], $t['payment_method'],
                         $t['subtotal'], $t['discount_amount'], $t['grand_total'], $t['status'],
                     ])->all(),
                 ],
@@ -167,7 +164,7 @@ class ReportController extends Controller
                     'heading' => 'Daftar Order Servis',
                     'columns' => ['Kode', 'Pelanggan', 'Tipe Motor', 'Status', 'Tanggal Masuk'],
                     'rows' => collect($data['orders'])->map(fn ($o) => [
-                        $o['order_code'], $o['customer'], $o['motorcycle_type'], $o['status'], $o['opened_at'],
+                        $o['order_code'], $o['customer'], $o['motorcycle_type'], $o['status'], $this->exportDateTime($o['opened_at']),
                     ])->all(),
                 ],
             ],
@@ -213,6 +210,24 @@ class ReportController extends Controller
         ];
     }
 
+    private function exportDateTime(mixed $value): string
+    {
+        if (!$value) {
+            return '-';
+        }
+
+        return Carbon::parse($value)->setTimezone(config('app.timezone'))->format('d/m/Y H:i');
+    }
+
+    private function exportDate(mixed $value): string
+    {
+        if (!$value) {
+            return '-';
+        }
+
+        return Carbon::parse($value)->format('d/m/Y');
+    }
+
     private function financeExportSections(Carbon $from, Carbon $to): array
     {
         $data = $this->reports->finance($from, $to, null);
@@ -234,7 +249,7 @@ class ReportController extends Controller
                     'heading' => 'Detail Pengeluaran',
                     'columns' => ['Tanggal', 'Kategori', 'Jumlah', 'Deskripsi', 'Dicatat Oleh'],
                     'rows' => collect($data['expenses'])->map(fn ($e) => [
-                        $e['expense_date'], $e['category'], $e['amount'], $e['description'], $e['created_by'],
+                        $this->exportDate($e['expense_date']), $e['category'], $e['amount'], $e['description'], $e['created_by'],
                     ])->all(),
                 ],
             ],

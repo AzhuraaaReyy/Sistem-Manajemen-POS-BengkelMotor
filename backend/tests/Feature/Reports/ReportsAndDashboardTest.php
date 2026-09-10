@@ -135,4 +135,27 @@ class ReportsAndDashboardTest extends TestCase
 
         $this->actingAs($cashier)->getJson('/api/v1/dashboard')->assertStatus(403);
     }
+
+    public function test_explicit_to_date_still_includes_sales_made_later_that_day(): void
+    {
+        // Regression: ReportController::range() parsed a date-only "to"
+        // (YYYY-MM-DD, exactly what the frontend sends) to midnight, so every
+        // whereBetween(..., $to) silently dropped all transactions made later
+        // on the "to" day. The upper bound must be normalized to end-of-day.
+        $admin = $this->admin();
+        $cashier = $this->cashier();
+        $product = Product::factory()->create(['sale_price' => 50000, 'purchase_price' => 20000, 'current_stock' => 10]);
+
+        $saleId = $this->actingAs($cashier)->postJson('/api/v1/sales', [
+            'items' => [['item_type' => 'PRODUCT', 'product_id' => $product->id, 'quantity' => 1]],
+        ])->json('data.id');
+        $this->actingAs($cashier)->postJson("/api/v1/sales/{$saleId}/checkout", ['payment_method' => 'CASH', 'paid_amount' => 50000]);
+
+        $today = now()->toDateString();
+        $response = $this->actingAs($admin)->getJson("/api/v1/reports/sales?from={$today}&to={$today}");
+        $response->assertStatus(200);
+        $this->assertEquals(1, $response->json('data.summary.transactions'));
+        $this->assertEquals(50000, (float) $response->json('data.summary.revenue'));
+        $this->assertCount(1, $response->json('data.transactions'));
+    }
 }

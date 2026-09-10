@@ -25,6 +25,11 @@ class BookingServiceTest extends TestCase
     {
         parent::setUp();
         
+        // Pin the clock to a weekday (Rabu) so relative dates like
+        // today()->addDays(2) never land on Sunday (booking closed),
+        // keeping these tests deterministic regardless of run day/timezone.
+        \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse('2026-09-09 10:00:00'));
+
         $this->service = new BookingService(
             $this->mock(NotificationService::class),
             $this->mock(WhatsAppService::class),

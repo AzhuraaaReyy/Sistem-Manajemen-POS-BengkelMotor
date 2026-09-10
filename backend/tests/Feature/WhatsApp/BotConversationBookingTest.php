@@ -16,6 +16,22 @@ class BotConversationBookingTest extends TestCase
 {
     use RefreshDatabase;
 
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        // Pin the clock to a weekday (Rabu) so the booking date computed as
+        // today()->addDays(2) never lands on Sunday (booking closed),
+        // keeping these tests deterministic regardless of run day/timezone.
+        \Carbon\Carbon::setTestNow(\Carbon\Carbon::parse('2026-09-09 10:00:00'));
+    }
+
+    protected function tearDown(): void
+    {
+        \Carbon\Carbon::setTestNow();
+        parent::tearDown();
+    }
+
     public function test_booking_flow_collects_fields_and_creates_booking(): void
     {
         config(['whatsapp.simulation_mode' => true]);
